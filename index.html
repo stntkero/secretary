@@ -154,11 +154,14 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='2.0';
+const APP_VERSION='2.1';
 const GOOGLE_CLIENT_ID='615249101814-ogv3iv1jktag6hueptfakj37l1pejfuh.apps.googleusercontent.com';  // 管理者填入 Google OAuth「網頁應用程式」用戶端 ID；留空則只能離線使用
 const CLOUD_FILE='secretary-sync.json';
 const SCOPES='https://www.googleapis.com/auth/drive.appdata openid email profile';
 const DRIVE='https://www.googleapis.com/drive/v3',DRIVE_UP='https://www.googleapis.com/upload/drive/v3';
+const CAL_SCOPE='https://www.googleapis.com/auth/calendar.app.created',CAL_API='https://www.googleapis.com/calendar/v3',CAL_NAME='業務秘書';
+function gcalOn(){return !!(S&&S.settings.gcal&&S.settings.gcal.enabled&&S.settings.gcal.calendarId)}
+function scopes(extra){return SCOPES+((extra||gcalOn())?' '+CAL_SCOPE:'')}
 const WEB_ORIGIN=location.protocol==='https:'||location.hostname==='localhost';
 function clientId(){let o='';try{o=localStorage.getItem('ss.clientId')||''}catch{}return (o||GOOGLE_CLIENT_ID||'').trim()}
 function googleAvailable(){return WEB_ORIGIN&&!!clientId()}
@@ -274,7 +277,7 @@ function setSettings(p){Object.assign(S.settings,p,{updatedAt:Date.now()});save(
 let saveTimer;
 function save(){clearTimeout(saveTimer);saveTimer=setTimeout(doSave,400)}
 async function doSaveLocal(){const pkg=await encryptObj(S,PASS);await kvSet('blob',pkg)}
-async function doSave(){try{await doSaveLocal();if(MODE==='google'){cloudDirty=true;try{localStorage.setItem('ss.cloudDirty','1')}catch{}scheduleCloudSync()}else scheduleFileWrite()}catch(e){console.error(e);toast('儲存失敗：'+e.message)}}
+async function doSave(){try{await doSaveLocal();if(MODE==='google'){cloudDirty=true;try{localStorage.setItem('ss.cloudDirty','1')}catch{}scheduleCloudSync();if(gcalOn())scheduleGcalSync()}else scheduleFileWrite()}catch(e){console.error(e);toast('儲存失敗：'+e.message)}}
 
 function mergeState(a,b){
   const out=blank();let changed=0,localNewer=0;
@@ -337,12 +340,12 @@ function gisReady(){return new Promise(res=>{const t0=Date.now();(function chk()
 async function getTokenClient(){if(tokenClient)return tokenClient;if(!(await gisReady()))throw new Error('Google 登入元件載入失敗，請確認有網路後重新整理');
   tokenClient=google.accounts.oauth2.initTokenClient({client_id:clientId(),scope:SCOPES,callback:()=>{},error_callback:()=>{}});return tokenClient}
 function validTok(){return GTOK&&GTOK.t&&GTOK.exp>Date.now()+60000?GTOK.t:null}
-async function requestToken(kind){ // kind: 'select' | 'silent'
+async function requestToken(kind,extra){ // kind: 'select' | 'silent' | 'add'（加權限）
   const tc=await getTokenClient();
   return new Promise((res,rej)=>{
-    tc.callback=r=>{if(r&&r.access_token){GTOK={t:r.access_token,exp:Date.now()+((+r.expires_in)||3600)*1000};try{localStorage.setItem('ss.gtok',JSON.stringify(GTOK))}catch{}needAuth=false;res(GTOK.t)}else rej(new Error((r&&r.error)||'no_token'))};
+    tc.callback=r=>{if(r&&r.access_token){GTOK={t:r.access_token,exp:Date.now()+((+r.expires_in)||3600)*1000,scope:r.scope||''};try{localStorage.setItem('ss.gtok',JSON.stringify(GTOK))}catch{}needAuth=false;res(GTOK.t)}else rej(new Error((r&&r.error)||'no_token'))};
     tc.error_callback=e=>rej(new Error((e&&e.type)||'popup_failed'));
-    const o={prompt:kind==='select'?'select_account':''};if(kind!=='select'&&GACCT&&GACCT.email)o.hint=GACCT.email;
+    const o={prompt:kind==='select'?'select_account':'',scope:scopes(extra)};if(kind!=='select'&&GACCT&&GACCT.email)o.hint=GACCT.email;
     tc.requestAccessToken(o);
   });
 }
@@ -388,6 +391,7 @@ async function cloudSync(opts={}){
     try{localStorage.setItem('ss.cloudMod',lastCloudMod)}catch{}
     markSync();setSyncStatus('已同步 '+timeNow());ok=true;
     if($('#authBanner'))render();
+    if(gcalOn()&&Date.now()-gcalLast>20000)scheduleGcalSync(300);
   }catch(e){
     if(e.message==='NOAUTH'){setSyncStatus('需要重新連線 Google');if(!$('#authBanner'))render()}
     else{console.warn(e);setSyncStatus('同步失敗：'+e.message);if(opts.loud)toast('同步失敗：'+e.message)}
@@ -440,6 +444,115 @@ function renderWelcome(){
   <p class="small muted" style="margin-top:14px;text-align:center"><a href="#" id="wLocal">進階：不用 Google 帳號，離線使用</a></p>`);
   $('#wGoogle').addEventListener('click',()=>googleSignIn());
   $('#wLocal').addEventListener('click',e=>{e.preventDefault();renderOnboarding()});
+}
+
+/* ========= Google 日曆連動（專用日曆，雙向） ========= */
+let gcalBusy=false,gcalTimer=null,gcalLast=0,gcalErr='';
+const nextDay=d=>{const x=parseDate(d);x.setDate(x.getDate()+1);return iso(x)};
+function shiftTime(date,time,mins){const d=new Date(`${date}T${time}:00`);d.setMinutes(d.getMinutes()+mins);return {date:iso(d),time:`${pad(d.getHours())}:${pad(d.getMinutes())}`}}
+function scheduleGcalSync(ms){if(!gcalOn())return;clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalSync(),ms||3000)}
+async function gcalEnsureCalendar(){
+  const g=S.settings.gcal||{};
+  if(g.calendarId){try{await gfetch(`${CAL_API}/calendars/${encodeURIComponent(g.calendarId)}`);return g.calendarId}catch(e){if(!/404|410/.test(e.message))throw e}}
+  const rebind=id=>{for(const t of Object.values(S.tasks)){delete t.gcalId;delete t.gcalSynced;delete t.gcalUpdated}setSettings({gcal:Object.assign({},g,{calendarId:id})})}; // 換了日曆：所有行程重新推送
+  try{const r=await gfetch(`${CAL_API}/users/me/calendarList?minAccessRole=owner`);const f=((await r.json()).items||[]).find(c=>c.summary===CAL_NAME);
+    if(f){rebind(f.id);return f.id}}catch(e){console.warn(e)}
+  const r=await gfetch(`${CAL_API}/calendars`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({summary:CAL_NAME,description:'由業務秘書程式自動同步的行程與待辦',timeZone:'Asia/Taipei'})});
+  const cal=await r.json();
+  try{await gfetch(`${CAL_API}/users/me/calendarList/${encodeURIComponent(cal.id)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({colorId:'9'})})}catch{}
+  rebind(cal.id);return cal.id;
+}
+function taskToEvent(t){
+  const c=t.clientId?C(t.clientId):null;const name=(c&&!c.deleted)?c.name:'';
+  const summary=(t.done?'✅ ':'')+t.title+(name&&!t.title.includes(name)?`（${name}）`:'');
+  const desc=[t.note||'',name?`客戶：${name}${c.phone?' '+c.phone:''}`:'',t.type?`類型：${t.type}`:'','— 由業務秘書同步'].filter(Boolean).join('\n');
+  const ev={summary,description:desc,extendedProperties:{private:{ssId:t.id}}};
+  if(t.time&&/^\d{2}:\d{2}$/.test(t.time)){const e=shiftTime(t.date,t.time,60);ev.start={dateTime:`${t.date}T${t.time}:00`,timeZone:'Asia/Taipei'};ev.end={dateTime:`${e.date}T${e.time}:00`,timeZone:'Asia/Taipei'}}
+  else{ev.start={date:t.date};ev.end={date:nextDay(t.date)}}
+  return ev;
+}
+function eventToTask(ev,t){
+  const o={};let title=(ev.summary||'（無標題）').trim();let done=false;if(title.startsWith('✅')){done=true;title=title.slice(1).trim()}
+  if(t&&t.clientId){const c=C(t.clientId);if(c&&title.endsWith(`（${c.name}）`))title=title.slice(0,-(c.name.length+2))}
+  o.title=title.trim()||'（無標題）';o.done=done;
+  if(ev.start&&ev.start.dateTime){const d=new Date(ev.start.dateTime);o.date=iso(d);o.time=`${pad(d.getHours())}:${pad(d.getMinutes())}`}
+  else if(ev.start&&ev.start.date){o.date=ev.start.date;o.time=''}
+  o.note=(ev.description||'').split('\n').filter(l=>!/^(客戶：|類型：|— 由業務秘書同步)/.test(l)).join('\n').trim();
+  return o;
+}
+async function gcalSync(opts={}){
+  if(MODE!=='google'||!gcalOn()||gcalBusy)return false;
+  gcalBusy=true;gcalLast=Date.now();let pulled=0,pushed=0,ok=false;
+  try{
+    const calId=await gcalEnsureCalendar();const base=`${CAL_API}/calendars/${encodeURIComponent(calId)}/events`;const tokKey='ss.gcalTok.'+calId;
+    // 拉：日曆端的新增 / 修改 / 刪除
+    let tok=null;try{tok=localStorage.getItem(tokKey)}catch{}
+    let pageToken=null,nextSync=null,items=[];
+    for(let guard=0;guard<30;guard++){
+      const q=new URLSearchParams({maxResults:'250',showDeleted:'true',singleEvents:'true'});
+      if(pageToken)q.set('pageToken',pageToken);else if(tok)q.set('syncToken',tok);else q.set('timeMin',new Date(Date.now()-90*864e5).toISOString());
+      let r;try{r=await gfetch(`${base}?${q}`)}catch(e){if(/410/.test(e.message)&&tok){tok=null;pageToken=null;try{localStorage.removeItem(tokKey)}catch{}continue}throw e}
+      const j=await r.json();items=items.concat(j.items||[]);
+      if(j.nextPageToken){pageToken=j.nextPageToken;continue}
+      nextSync=j.nextSyncToken||null;break;
+    }
+    const byG={};for(const t of Object.values(S.tasks))if(t.gcalId)byG[t.gcalId]=t;
+    for(const ev of items){
+      const ssId=ev.extendedProperties&&ev.extendedProperties.private&&ev.extendedProperties.private.ssId;
+      const t=(ssId&&S.tasks[ssId])||byG[ev.id];const evUp=Date.parse(ev.updated||'')||0;
+      if(ev.status==='cancelled'){if(t&&!t.deleted){t.deleted=true;t.updatedAt=Date.now();t.gcalSynced=t.updatedAt;pulled++}continue}
+      if(t){
+        if(t.deleted)continue;
+        if(evUp>(t.gcalUpdated||0)&&evUp>(t.updatedAt||0)){Object.assign(t,eventToTask(ev,t),{gcalId:ev.id,gcalUpdated:evUp});t.updatedAt=Date.now();t.gcalSynced=t.updatedAt;pulled++}
+        else if(!t.gcalId){t.gcalId=ev.id;t.gcalUpdated=evUp}
+      }else{
+        const nt=Object.assign({id:uid(),clientId:'',createdAt:Date.now()},eventToTask(ev,null),{gcalId:ev.id,gcalUpdated:evUp});
+        nt.type=nt.time?'行程':'待辦';nt.updatedAt=Date.now();nt.gcalSynced=nt.updatedAt;S.tasks[nt.id]=nt;pulled++;
+      }
+    }
+    if(nextSync){try{localStorage.setItem(tokKey,nextSync)}catch{}}
+    // 推：程式端的新增 / 修改 / 刪除
+    const oldCut=iso(new Date(Date.now()-90*864e5));let failed=0,lastErr='';
+    for(const t of Object.values(S.tasks)){
+      if((t.updatedAt||0)<=(t.gcalSynced||0))continue;
+      try{
+        if(t.deleted){if(t.gcalId){try{await gfetch(`${base}/${encodeURIComponent(t.gcalId)}`,{method:'DELETE'})}catch(e){if(!/404|410/.test(e.message))throw e}}t.gcalSynced=t.updatedAt;pushed++;continue}
+        if(!t.date||(!t.gcalId&&t.date<oldCut)){t.gcalSynced=t.updatedAt;continue}
+        const body=JSON.stringify(taskToEvent(t));let r=null;
+        if(t.gcalId){try{r=await gfetch(`${base}/${encodeURIComponent(t.gcalId)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body})}catch(e){if(/404|410/.test(e.message))t.gcalId=null;else throw e}}
+        if(!t.gcalId)r=await gfetch(base,{method:'POST',headers:{'Content-Type':'application/json'},body});
+        const ev=await r.json();t.gcalId=ev.id;t.gcalUpdated=Date.parse(ev.updated||'')||Date.now();t.gcalSynced=t.updatedAt;pushed++;
+      }catch(e){if(e.message==='NOAUTH')throw e;failed++;lastErr=e.message;console.warn('gcal push failed',t.id,e)} // 單筆失敗不影響其他行程，下次再試
+    }
+    gcalErr=failed?`有 ${failed} 筆未能同步：${lastErr}`:'';try{localStorage.setItem('ss.gcalLastAt',String(Date.now()))}catch{}
+    if(pulled||pushed){await doSaveLocal();cloudDirty=true;try{localStorage.setItem('ss.cloudDirty','1')}catch{}scheduleCloudSync();render();if(pulled)toast(`已從 Google 日曆更新 ${pulled} 筆`)}
+    ok=true;
+  }catch(e){
+    if(e.message!=='NOAUTH'){console.warn(e);gcalErr=/calendar-json|has not been used|is disabled/i.test(e.message)?'Google Cloud 專案尚未啟用 Calendar API':e.message;if(opts.loud)toast('日曆同步失敗：'+gcalErr)}
+  }finally{gcalBusy=false}
+  return ok;
+}
+async function gcalEnable(){
+  if(MODE!=='google'){alert('Google 日曆連動需要先用 Google 帳號登入。');return}
+  try{await requestToken('add',true)}catch(e){if(!/popup_closed|access_denied/.test(e.message))alert('無法取得日曆權限：'+e.message);return}
+  if(!((GTOK&&GTOK.scope)||'').includes('calendar.app.created')){alert('沒有取得日曆權限，無法連動。請重試並勾選允許日曆。');return}
+  setSettings({gcal:Object.assign({},S.settings.gcal||{},{enabled:true,calendarId:(S.settings.gcal||{}).calendarId||''})});
+  toast('正在建立「業務秘書」日曆並同步…');
+  try{await gcalEnsureCalendar();const ok=await gcalSync({loud:true});render();if(ok)toast('已連動 Google 日曆')}
+  catch(e){setSettings({gcal:Object.assign({},S.settings.gcal||{},{enabled:false})});render();alert('連動失敗：'+(/calendar-json|has not been used|is disabled/i.test(e.message)?'Google Cloud 專案尚未啟用 Calendar API，請先到 API 程式庫啟用「Google Calendar API」。':e.message))}
+}
+function gcalDisable(){
+  if(!confirm('解除連動後，程式不再與 Google 日曆同步。日曆裡已有的事件會保留，不需要時可在 Google 日曆自行刪除整個「業務秘書」日曆。確定解除？'))return;
+  setSettings({gcal:Object.assign({},S.settings.gcal||{},{enabled:false})});render();toast('已解除 Google 日曆連動');
+}
+function gcalCard(){
+  if(MODE!=='google')return '';const g=S.settings.gcal||{};const on=!!(g.enabled&&g.calendarId);const last=+localStorage.getItem('ss.gcalLastAt')||0;
+  return `<div class="card"><h3>Google 日曆連動</h3>
+    <p class="small muted">在你的 Google 日曆建立一個「${CAL_NAME}」日曆，程式裡的行程與待辦會出現在那裡；在 Google 日曆 App 改時間、改內容或刪除，也會同步回程式。只碰這個日曆，不碰你其他的行程。</p>
+    ${on?`<p class="small"><span class="badge ok">已連動</span> 上次同步：${last?new Date(last).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'尚未'}${gcalErr?` <span style="color:var(--bad)">（${esc(gcalErr)}）</span>`:''}</p>
+      <div class="row"><button class="btn" data-act="gcalSyncNow">立即同步</button><button class="btn" data-act="gcalDisable">解除連動</button></div>`
+    :`<div class="row"><button class="btn p" data-act="gcalEnable">連動 Google 日曆</button></div><p class="small muted" style="margin-top:6px">第一次會請你允許「建立次要日曆並管理其中的活動」這一項權限。</p>`}
+   </div>`;
 }
 
 /* ========= 匯出 / 匯入 (手機) ========= */
@@ -517,7 +630,7 @@ function taskRow(t){
     <input type="checkbox" data-act="toggleTask" data-id="${t.id}" ${t.done?'checked':''}>
     <div class="main"><div class="t">${t.time?`<span class="muted">${esc(t.time)}</span> `:''}${esc(t.title)} ${t.type==='行程'?'<span class="badge gray">行程</span>':''}</div>
     <div class="d small muted">${fmtDate(t.date,true)}${c?` ・ <a href="#" data-act="openClient" data-id="${c.id}">${esc(c.name)}</a>`:''}${t.note?' ・ '+esc(t.note):''}</div></div>
-    <a class="btn s ghost" data-act="ext" href="${gcalUrl(t)}" target="_blank" rel="noopener" title="加到 Google 日曆">📅</a><button class="btn s ghost" data-act="editTask" data-id="${t.id}">編輯</button></div>`;
+    ${gcalOn()?'':`<a class="btn s ghost" data-act="ext" href="${gcalUrl(t)}" target="_blank" rel="noopener" title="加到 Google 日曆">📅</a>`}<button class="btn s ghost" data-act="editTask" data-id="${t.id}">編輯</button></div>`;
 }
 
 function viewToday(){
@@ -696,6 +809,7 @@ function viewSettings(){
   <div class="grid2">
   <div>
    ${syncCard()}
+   ${gcalCard()}
    ${securityCard()}
   </div>
   <div>
@@ -737,7 +851,7 @@ function viewSettings(){
     <p><b>每次見完客戶</b>到客戶頁按「新增紀錄」，寫下談了什麼、下一步和日期。實地觀察到的家庭、居住、興趣、態度直接用勾選的，會累積成「客戶特徵」，也能用搜尋找出有同樣特徵的客戶（例如搜「有小孩」做教育金名單）。</p>
     <p><b>銷售和增員是兩條線</b>，同一個人可以同時在「建議書」和「邀約說明會」，互不影響。</p>
     <p><b>電訪名單</b>：到「名單」建立專案，再到「客戶」按「勾選」批次加入，逐一記錄撥打結果。</p>
-    <p><b>行事曆</b>：行程旁的 📅 可加到 Google 日曆；「匯出行事曆」可一次匯入所有事項與生日。</p>
+    <p><b>行事曆</b>：${MODE==='google'?'「設定 → Google 日曆連動」後，行程與待辦會和你 Google 日曆裡的「業務秘書」日曆雙向同步。':'行程旁的 📅 可加到 Google 日曆；「匯出行事曆」可一次匯入所有事項與生日。'}</p>
     <p><b>同步</b>：${MODE==='google'?'用 Google 帳號登入後全自動，每次開啟與修改後都會和雲端硬碟同步。':'電腦連結雲端硬碟裡的同步檔後全自動；手機改完記得「分享 / 存到雲端硬碟」。'}</p>
     <p class="small muted">版本 ${APP_VERSION} ・ 資料不經任何其他伺服器</p>
    </div>
@@ -1198,6 +1312,9 @@ document.addEventListener('click',async e=>{
     case 'cloudSyncNow':{const ok=await cloudSync({force:true,push:true,loud:true});if(ok)toast('同步完成');break}
     case 'gReauth':{let got=false;try{await requestToken('silent');got=true}catch{try{await requestToken('select');got=true}catch(e){toast('連線失敗：'+e.message)}}if(got){needAuth=false;render();cloudSync({force:true,loud:true})}break}
     case 'setPin':pinForm();break;
+    case 'gcalEnable':gcalEnable();break;
+    case 'gcalDisable':gcalDisable();break;
+    case 'gcalSyncNow':{toast('同步中…');const ok=await gcalSync({loud:true});render();if(ok)toast('日曆同步完成')}break;
     case 'removePin':if(confirm('移除開啟 PIN？')){localStorage.removeItem('ss.pinHash');render();toast('已移除 PIN')}break;
   }
 });
