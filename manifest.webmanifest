@@ -1,9 +1,16 @@
 {
+ "id": "/secretary/",
  "name": "業務秘書",
  "short_name": "業務秘書",
+ "description": "保險業務的客戶、增員與行程秘書",
  "start_url": "./index.html",
  "scope": "./",
  "display": "standalone",
+ "display_override": [
+  "standalone",
+  "minimal-ui"
+ ],
+ "orientation": "portrait",
  "background_color": "#f4f6fa",
  "theme_color": "#0b3d91",
  "lang": "zh-Hant",
