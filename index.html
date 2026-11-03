@@ -158,7 +158,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='2.2';
+const APP_VERSION='2.3';
 const GOOGLE_CLIENT_ID='615249101814-ogv3iv1jktag6hueptfakj37l1pejfuh.apps.googleusercontent.com';  // 管理者填入 Google OAuth「網頁應用程式」用戶端 ID；留空則只能離線使用
 const CLOUD_FILE='secretary-sync.json';
 const SCOPES='https://www.googleapis.com/auth/drive.appdata openid email profile';
@@ -218,6 +218,12 @@ function daysUntilAnnual(s){ // 'YYYY-MM-DD' 或 'MM-DD' → 距下次週年的�
   let d=new Date(`${y}-${md}T00:00:00`);if(isNaN(d))return null;
   if(d<t)d=new Date(`${y+1}-${md}T00:00:00`);return Math.round((d-t)/864e5);
 }
+const ZODIAC=[['摩羯座','♑',1,19],['水瓶座','♒',2,18],['雙魚座','♓',3,20],['牡羊座','♈',4,19],['金牛座','♉',5,20],['雙子座','♊',6,21],['巨蟹座','♋',7,22],['獅子座','♌',8,22],['處女座','♍',9,22],['天秤座','♎',10,23],['天蠍座','♏',11,22],['射手座','♐',12,21],['摩羯座','♑',12,31]];
+const ZODIAC_TIPS={牡羊座:'行動派、決定快，不愛拖泥帶水。重點講清楚、方案給兩個讓他選，別繞太久。',金牛座:'務實重安全感，在意划不划算。用數字和保證談，給他時間想，別催。',雙子座:'好奇、話題多、怕無聊。從新資訊和時事切入，資料簡潔有變化，追蹤要勤。',巨蟹座:'重家庭和情感，防備心強。先聊家人、建立信任，從「保護家人」切入最有感。',獅子座:'愛面子、重視被尊重。多肯定他的成就，用「量身」「專屬」的方案談。',處女座:'細心謹慎、會挑細節。條款、除外、數字要準備齊，誠實說缺點反而加分。',天秤座:'重關係和諧、怕衝突，常猶豫。幫他比較並給建議，減少選項，溫和但明確收尾。',天蠍座:'觀察力強、不輕易信人，一旦信任很長久。別誇大，坦白透明，耐心經營。',射手座:'樂觀直率、討厭被綁。強調彈性和自由度，流程越簡單越好。',摩羯座:'務實有目標、重長期規劃。用退休、資產累積、責任感切入，拿出專業和實績。',水瓶座:'有想法、不喜歡被推銷。給資訊讓他自己判斷，聊趨勢和新觀念，尊重他的獨立。',雙魚座:'感性、同理心強、容易心軟。用故事和情境談，給他安心感，幫他把事情整理清楚。'};
+const LIFE_TIPS={1:'獨立、有主見、喜歡掌控。讓他做決定，提供選項而不是結論。',2:'重視關係與感受、擅長配合。多傾聽、慢慢來，家人的意見對他很重要。',3:'外向樂觀、表達力強。氣氛輕鬆最重要，在聊天中帶出需求。',4:'踏實保守、重規矩。按部就班、文件清楚，承諾一定要做到。',5:'愛自由、求變化、怕束縛。強調彈性、別一次談太久，保持新鮮感。',6:'顧家、責任感重、愛照顧人。從家人的保障和照顧父母切入。',7:'愛思考、重分析、話不多。給完整資料讓他研究，別催，問對問題。',8:'重視成就、金錢和效率。談投報、稅務、資產傳承，直接講重點。',9:'理想主義、有同理心、看重意義。談保障背後的價值和對他人的影響。',11:'直覺強、敏感、有啟發性（大師數）。真誠相待，重視他的感受和願景。',22:'務實的理想家、格局大（大師數）。談長期藍圖與具體執行步驟。',33:'奉獻型、關懷他人（大師數）。從照顧家人和社會責任切入。'};
+function zodiacOf(b){const d=parseDate(b);if(!d||!b||b.length<5)return null;const m=d.getMonth()+1,day=d.getDate();for(const [n,sym,mm,dd] of ZODIAC){if(m<mm||(m===mm&&day<=dd))return {name:n,sym}}return null}
+function lifePath(b){if(!b||b.length<10)return null;const sum=x=>String(x).split('').reduce((a,c)=>a+(+c||0),0);let n=sum(b.replace(/\D/g,''));while(n>9&&n!==11&&n!==22&&n!==33)n=sum(n);return n}
+function birthTags(c){const a=ageOf(c.birthday),z=zodiacOf(c.birthday),l=lifePath(c.birthday);return [a!==null?`${a} 歲`:'',z?`${z.sym} ${z.name}`:'',l?`靈數 ${l}`:''].filter(Boolean).join(' ・ ')}
 function ageOf(b){const d=parseDate(b);if(!d||b.length<10)return null;const t=new Date();let a=t.getFullYear()-d.getFullYear();if(t<new Date(t.getFullYear(),d.getMonth(),d.getDate()))a--;return a}
 function money(n){return n?Number(n).toLocaleString('zh-TW'):''}
 let toastTimer;function toast(m){let t=$('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',2600)}
@@ -738,6 +744,8 @@ function clientDetail(c){
       <div class="k">Email</div><div>${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:'-'}</div>
       <div class="k">地址</div><div>${c.address?`<a href="https://www.google.com/maps/search/${encodeURIComponent(c.address)}" target="_blank" rel="noopener">${esc(c.address)}</a>`:'-'}</div>
       <div class="k">生日</div><div>${c.birthday?`${esc(c.birthday)}${ageOf(c.birthday)!==null?`（${ageOf(c.birthday)} 歲）`:''}`:'-'}</div>
+      ${zodiacOf(c.birthday)?`<div class="k">星座</div><div>${zodiacOf(c.birthday).sym} ${zodiacOf(c.birthday).name}<div class="small muted">${esc(ZODIAC_TIPS[zodiacOf(c.birthday).name]||'')}</div></div>`:''}
+      ${lifePath(c.birthday)?`<div class="k">生命靈數</div><div>${lifePath(c.birthday)}<div class="small muted">${esc(LIFE_TIPS[lifePath(c.birthday)]||'')}（出生年月日各位數相加）</div></div>`:''}
       <div class="k">身分證</div><div>${c.idNo?(ui.showId===c.id?`${esc(c.idNo)} <a href="#" class="small" data-act="hideId">隱藏</a>`:`${esc(maskId(c.idNo))} <a href="#" class="small" data-act="revealId" data-id="${c.id}">顯示</a>`):'-'}</div>
       <div class="k">性別</div><div>${esc(c.gender||'-')}</div>
       <div class="k">職業</div><div>${esc([c.company,c.job].filter(Boolean).join(' ')||'-')}</div>
@@ -751,7 +759,7 @@ function clientDetail(c){
   return `<div class="card">
     <div class="row sb"><div class="row"><button class="btn s back" data-act="closeClient">‹ 返回</button><h2 style="margin:0">${esc(c.name)}</h2></div>
       <div class="row"><button class="btn s" data-act="editClient" data-id="${c.id}">編輯</button><button class="btn s d" data-act="delClient" data-id="${c.id}">刪除</button></div></div>
-    <div class="muted small" style="margin:4px 0 10px">${esc([c.company,c.job].filter(Boolean).join(' '))}${c.phone?` ・ <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:''}${lc?` ・ 上次聯絡 ${fmtDate(lc)}（${ago(daysSince(lc))}）`:' ・ 尚未聯絡'}</div>
+    <div class="muted small" style="margin:4px 0 10px">${birthTags(c)?`<span title="依生日計算，僅供聊天參考">${esc(birthTags(c))}</span> ・ `:''}${esc([c.company,c.job].filter(Boolean).join(' '))}${c.phone?` ・ <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:''}${lc?` ・ 上次聯絡 ${fmtDate(lc)}（${ago(daysSince(lc))}）`:' ・ 尚未聯絡'}</div>
     <div class="grid2" style="gap:10px;margin-bottom:12px">
       <div class="card" style="margin:0;padding:10px 12px;border-left:4px solid var(--sale)"><div class="small muted">銷售進度</div>
         <select data-act="setSales" data-id="${c.id}">${SALES_STAGES.map(s=>`<option ${c.salesStage===s?'selected':''}>${s}</option>`).join('')}</select>
