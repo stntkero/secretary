@@ -164,7 +164,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='2.5';
+const APP_VERSION='2.6';
 const THEMES=[["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
   let th='blue',ap='auto';try{th=localStorage.getItem('ss.theme')||th;ap=localStorage.getItem('ss.appearance')||ap}catch{}
@@ -191,6 +191,8 @@ const CATS=[['r','#e53935','11'],['y','#f9a825','5'],['g','#43a047','10']]; // �
 const CAT_DEFAULT_LABELS={r:'客戶業務',y:'增員 / 內勤 / 會議',g:'私人'};
 function catLabel(k){return ((S&&S.settings.catLabels)||{})[k]||CAT_DEFAULT_LABELS[k]||k}
 function catColor(k){const c=CATS.find(x=>x[0]===k);return c?c[1]:'transparent'}
+const GRADES=[['A','有錢有概念','#43a047'],['B','有錢沒概念','#26a69a'],['C','沒錢有概念','#29b6f6'],['D','沒錢沒概念','#1e88e5']]; // A 綠 → D 藍
+function gradeOf(c){return GRADES.find(g=>g[0]===(c&&c.grade))||null}
 function taskPlace(t){if(t.place)return t.place;const c=t.clientId?C(t.clientId):null;return (c&&!c.deleted&&c.address)||''}
 function taskCat(t){return t.cat||(t.clientId?'r':'y')}
 const catDot=k=>`<span class="dot" style="background:${catColor(k)}"></span>`;
@@ -282,7 +284,7 @@ async function kvDel(k){const db=await idb();return new Promise((res,rej)=>{cons
 /* ========= 狀態 ========= */
 let S=null,PASS=null,FH=null,lastFileMod=0,TH=null,topicLastRead=0,topicPermOK=false;
 let MODE=localStorage.getItem('ss.mode')||'local',GACCT=null;try{GACCT=JSON.parse(localStorage.getItem('ss.gacct')||'null')}catch{}
-const ui={view:'today',clientId:null,q:'',filter:'all',sales:'',recruit:'',showDone:false,tab:'logs',showId:null,select:false,selected:new Set(),listId:null,pick:{q:'',f:'all'},sort:'name'};
+const ui={view:'today',clientId:null,q:'',filter:'all',sales:'',recruit:'',grade:'',showDone:false,tab:'logs',showId:null,select:false,selected:new Set(),listId:null,pick:{q:'',f:'all'},sort:'name'};
 const blank=()=>({v:3,clients:{},logs:{},tasks:{},policies:{},lists:{},listItems:{},settings:{staleDays:30,birthdayDays:7,anniversaryDays:30,recruitDays:3,owner:'',updatedAt:0}});
 const live=col=>Object.values(S[col]).filter(x=>!x.deleted);
 const C=id=>S.clients[id];
@@ -662,7 +664,7 @@ function render(){
 function clientRow(c,extra){
   const lc=lastContact(c.id),d=daysSince(lc);
   return `<div class="item" data-act="${ui.select?'selRow':'openClient'}" data-id="${c.id}">
-    ${ui.select?`<input type="checkbox" data-act="selClient" data-id="${c.id}" ${ui.selected.has(c.id)?'checked':''} style="width:20px;height:20px;margin-top:9px;flex:none">`:''}<div class="avatar">${esc((c.name||'?').slice(0,1))}</div>
+    ${ui.select?`<input type="checkbox" data-act="selClient" data-id="${c.id}" ${ui.selected.has(c.id)?'checked':''} style="width:20px;height:20px;margin-top:9px;flex:none">`:''}<div class="avatar" ${gradeOf(c)?`style="box-shadow:0 0 0 3px ${gradeOf(c)[2]}" title="${gradeOf(c)[1]}"`:''}>${esc((c.name||'?').slice(0,1))}</div>
     <div class="main"><div class="t">${esc(c.name)} ${stageBadges(c)}</div>
     <div class="d">${esc([c.company,c.job,c.source].filter(Boolean).join('・'))}${extra?' '+extra:''}</div></div>
     <div class="r">${lc?`上次聯絡<br>${fmtDate(lc)}（${ago(d)}）`:'<span class="badge gray">尚未聯絡</span>'}</div></div>`;
@@ -713,6 +715,7 @@ function filteredClients(){
   if(ui.filter==='recruit')arr=arr.filter(c=>c.recruitActive&&!['已報到','暫停'].includes(c.recruitStage));
   if(ui.filter==='stale'){const st=S.settings.staleDays;arr=arr.filter(c=>{const d=daysSince(lastContact(c.id));return d===null||d>=st})}
   if(ui.filter==='customer')arr=arr.filter(c=>['成交','保全服務'].includes(c.salesStage));
+  if(ui.grade)arr=arr.filter(c=>ui.grade==='none'?!c.grade:c.grade===ui.grade);
   if(ui.sales)arr=arr.filter(c=>c.salesStage===ui.sales);
   if(ui.recruit)arr=arr.filter(c=>c.recruitActive&&c.recruitStage===ui.recruit);
   if(ui.sort==='last')return arr.sort((a,b)=>(lastContact(a.id)||'').localeCompare(lastContact(b.id)||'')||a.name.localeCompare(b.name,'zh-Hant'));
@@ -727,7 +730,7 @@ function viewClients(){
     ${ui.select?`<div class="banner" style="background:#e6eefc;color:var(--sale);border-color:#b9cdf5"><b>已勾選 ${ui.selected.size} 位</b><button class="btn s" data-act="selAll">全選目前篩選結果（${arr.length}）</button><button class="btn s" data-act="selNone">清除</button><button class="btn s p" data-act="addSelToList" ${ui.selected.size?'':'disabled'}>加入電訪名單</button></div>`:''}
     <input id="searchBox" type="search" placeholder="搜尋姓名、電話、公司、備註…" value="${esc(ui.q)}" data-act="search" style="margin-bottom:10px">
     <div class="chips" style="margin-bottom:10px">${chips}</div>
-    <div class="row" style="margin-bottom:10px"><select data-act="salesFilter" style="width:auto"><option value="">所有銷售階段</option>${SALES_STAGES.map(s=>`<option ${ui.sales===s?'selected':''}>${s}</option>`).join('')}</select>
+    <div class="row" style="margin-bottom:10px"><select data-act="gradeFilter" style="width:auto"><option value="">所有分級</option>${GRADES.map(([k,l])=>`<option value="${k}" ${ui.grade===k?'selected':''}>${l}</option>`).join('')}<option value="none" ${ui.grade==='none'?'selected':''}>未分級</option></select><select data-act="salesFilter" style="width:auto"><option value="">所有銷售階段</option>${SALES_STAGES.map(s=>`<option ${ui.sales===s?'selected':''}>${s}</option>`).join('')}</select>
     <select data-act="recruitFilter" style="width:auto"><option value="">所有增員階段</option>${RECRUIT_STAGES.map(s=>`<option ${ui.recruit===s?'selected':''}>${s}</option>`).join('')}</select>
     <select data-act="sortClients" style="width:auto"><option value="name" ${ui.sort==='name'?'selected':''}>姓名排序</option><option value="last" ${ui.sort==='last'?'selected':''}>最久沒聯絡優先</option><option value="created" ${ui.sort==='created'?'selected':''}>最近建檔優先</option></select></div>
     <div class="card list">${arr.length?arr.map(c=>clientRow(c)).join(''):'<div class="empty">沒有符合的客戶</div>'}</div></div>`;
@@ -784,7 +787,7 @@ function clientDetail(c){
     <div class="sec"><h3>備註</h3><div style="white-space:pre-wrap">${esc(c.notes||'')||'<span class="muted">無</span>'}</div></div>`;
   }
   return `<div class="card">
-    <div class="row sb"><div class="row"><button class="btn s back" data-act="closeClient">‹ 返回</button><h2 style="margin:0">${esc(c.name)}</h2></div>
+    <div class="row sb"><div class="row"><button class="btn s back" data-act="closeClient">‹ 返回</button><h2 style="margin:0">${gradeOf(c)?`<span class="dot" style="background:${gradeOf(c)[2]};width:12px;height:12px" title="${gradeOf(c)[1]}"></span>`:''}${esc(c.name)}</h2></div>
       <div class="row"><button class="btn s" data-act="editClient" data-id="${c.id}">編輯</button><button class="btn s d" data-act="delClient" data-id="${c.id}">刪除</button></div></div>
     <div class="muted small" style="margin:4px 0 10px">${birthTags(c)?`<span title="依生日計算，僅供聊天參考">${esc(birthTags(c))}</span> ・ `:''}${esc([c.company,c.job].filter(Boolean).join(' '))}${c.phone?` ・ <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:''}${lc?` ・ 上次聯絡 ${fmtDate(lc)}（${ago(daysSince(lc))}）`:' ・ 尚未聯絡'}</div>
     <div class="grid2" style="gap:10px;margin-bottom:12px">
@@ -1172,6 +1175,7 @@ function clientForm(c){
     <label class="f"><span class="l">公司</span><input type="text" name="company" value="${esc(c.company||'')}"></label>
     <label class="f"><span class="l">職業 / 職稱</span><input type="text" name="job" value="${esc(c.job||'')}"></label>
     <label class="f"><span class="l">來源</span><select name="source">${opt(SOURCES,c.source||'緣故')}</select></label>
+    <div class="f w"><span class="l">客戶分級（名單上只以顏色區分）</span><div class="row" style="gap:14px;flex-wrap:wrap;padding:4px 0">${GRADES.map(([k,l,col])=>`<label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer"><span class="swatch" style="background:${col}"><input type="radio" name="grade" value="${k}" ${c.grade===k?'checked':''}></span><span class="small muted">${l}</span></label>`).join('')}<label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer"><span class="swatch" style="background:var(--card);border:2px dashed var(--line)"><input type="radio" name="grade" value="" ${!c.grade?'checked':''}></span><span class="small muted">未分級</span></label></div></div>
     <label class="f"><span class="l">介紹人</span><input type="text" name="referrer" value="${esc(c.referrer||'')}"></label>
     <label class="f w"><span class="l">標籤（用逗號分隔，例如：高資產, 有小孩, 企業主）</span><input type="text" name="tags" value="${esc((c.tags||[]).join(', '))}"></label>
     <label class="f"><span class="l">銷售階段</span><select name="salesStage">${opt(SALES_STAGES,c.salesStage||'名單')}</select></label>
@@ -1186,7 +1190,7 @@ function clientForm(c){
     const fam=(o['fam_rel[]']||[]).map((r,i)=>({relation:r,name:(o['fam_name[]']||[])[i]||'',birthday:(o['fam_bday[]']||[])[i]||'',note:(o['fam_note[]']||[])[i]||'',clientId:(o['fam_cid[]']||[])[i]||''})).filter(f=>f.name||f.birthday);
     const idNo=(o.idNo||'').toUpperCase().replace(/\s/g,'');
     if(idNo&&!validTwId(idNo)&&!confirm('身分證字號格式看起來不正確，仍要儲存嗎？'))return;
-    const obj=Object.assign({},c,{id:c.id||uid(),name:o.name,phone:o.phone,idNo,line:o.line,email:o.email,address:o.address,birthday:o.birthday,gender:o.gender,company:o.company,job:o.job,source:o.source,referrer:o.referrer,
+    const obj=Object.assign({},c,{id:c.id||uid(),name:o.name,phone:o.phone,idNo,line:o.line,email:o.email,address:o.address,birthday:o.birthday,gender:o.gender,company:o.company,job:o.job,source:o.source,referrer:o.referrer,grade:o.grade||'',
       tags:o.tags.split(/[,，]/).map(s=>s.trim()).filter(Boolean),salesStage:o.salesStage,salesNote:o.salesNote,recruitActive:o.recruitActive==='on',recruitStage:o.recruitStage,recruitNote:o.recruitNote,notes:o.notes,family:fam});
     if(obj.salesStage==='成交'&&c.salesStage!=='成交')obj.closedAt=Date.now();if(obj.recruitActive&&obj.recruitStage==='已報到'&&c.recruitStage!=='已報到')obj.recruitedAt=Date.now();
     put('clients',obj);closeModal();ui.view='clients';ui.clientId=obj.id;render();toast(c.id?'已更新':'已新增客戶');
@@ -1278,8 +1282,8 @@ function changePassForm(){
   });
 }
 function exportCsv(){
-  const rows=[['姓名','身分證字號','電話','LINE','Email','地址','生日','性別','公司','職業','來源','介紹人','標籤','銷售階段','增員對象','增員階段','上次聯絡','備註']];
-  for(const c of live('clients'))rows.push([c.name,c.idNo,c.phone,c.line,c.email,c.address,c.birthday,c.gender,c.company,c.job,c.source,c.referrer,(c.tags||[]).join(' '),c.salesStage,c.recruitActive?'是':'',c.recruitActive?c.recruitStage:'',lastContact(c.id)||'',c.notes]);
+  const rows=[['姓名','身分證字號','電話','LINE','Email','地址','生日','性別','公司','職業','來源','介紹人','分級','標籤','銷售階段','增員對象','增員階段','上次聯絡','備註']];
+  for(const c of live('clients'))rows.push([c.name,c.idNo,c.phone,c.line,c.email,c.address,c.birthday,c.gender,c.company,c.job,c.source,c.referrer,gradeOf(c)?`${c.grade} ${gradeOf(c)[1]}`:'',(c.tags||[]).join(' '),c.salesStage,c.recruitActive?'是':'',c.recruitActive?c.recruitStage:'',lastContact(c.id)||'',c.notes]);
   downloadCsv(rows,`客戶名單_${today()}.csv`);
 }
 function downloadCsv(rows,name){const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;a.click();toast('CSV 是未加密的明文，用完請刪除')}
@@ -1377,6 +1381,7 @@ document.addEventListener('change',e=>{
     case 'setRecruit':{const c=C(id);if(el.value==='已報到'&&c.recruitStage!=='已報到')c.recruitedAt=Date.now();c.recruitStage=el.value;put('clients',c);render();break}
     case 'setRecruitActive':{const c=C(id);c.recruitActive=el.checked;if(el.checked&&(!c.recruitStage||c.recruitStage==='未啟動'))c.recruitStage='聊過意願';put('clients',c);render();break}
     case 'salesFilter':ui.sales=el.value;render();break;
+    case 'gradeFilter':ui.grade=el.value;render();break;
     case 'recruitFilter':ui.recruit=el.value;render();break;
     case 'toggleShowDone':ui.showDone=el.checked;render();break;
     case 'selClient':if(el.checked)ui.selected.add(id);else ui.selected.delete(id);render();break;
