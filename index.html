@@ -101,7 +101,10 @@ label.f span.l{display:block;font-size:13px;color:var(--muted);margin-bottom:4px
 .log p{margin:4px 0;white-space:pre-wrap}
 .ob{background:#fff8e6;border-radius:8px;padding:6px 10px;font-size:14px;margin-top:4px;white-space:pre-wrap}
 @media (prefers-color-scheme:dark){.ob{background:#3a2d12}}
-.task{display:flex;gap:10px;align-items:flex-start;padding:9px 2px;border-top:1px solid var(--line)}
+.task{display:flex;gap:10px;align-items:flex-start;padding:9px 2px 9px 10px;border-top:1px solid var(--line);border-left:4px solid transparent}
+.task.cr{border-left-color:#e53935}.task.cy{border-left-color:#f9a825}.task.cg{border-left-color:#43a047}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .task:first-child{border-top:0}
 .task input{width:20px;height:20px;margin-top:3px;flex:none}
 .task.done .t{text-decoration:line-through;color:var(--muted)}
@@ -154,11 +157,17 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='2.1';
+const APP_VERSION='2.2';
 const GOOGLE_CLIENT_ID='615249101814-ogv3iv1jktag6hueptfakj37l1pejfuh.apps.googleusercontent.com';  // 管理者填入 Google OAuth「網頁應用程式」用戶端 ID；留空則只能離線使用
 const CLOUD_FILE='secretary-sync.json';
 const SCOPES='https://www.googleapis.com/auth/drive.appdata openid email profile';
 const DRIVE='https://www.googleapis.com/drive/v3',DRIVE_UP='https://www.googleapis.com/upload/drive/v3';
+const CATS=[['r','#e53935','11'],['y','#f9a825','5'],['g','#43a047','10']]; // 代號, 顯示顏色, Google 日曆 colorId
+const CAT_DEFAULT_LABELS={r:'客戶業務',y:'增員 / 內勤 / 會議',g:'私人'};
+function catLabel(k){return ((S&&S.settings.catLabels)||{})[k]||CAT_DEFAULT_LABELS[k]||k}
+function catColor(k){const c=CATS.find(x=>x[0]===k);return c?c[1]:'transparent'}
+function taskCat(t){return t.cat||(t.clientId?'r':'y')}
+const catDot=k=>`<span class="dot" style="background:${catColor(k)}"></span>`;
 const CAL_SCOPE='https://www.googleapis.com/auth/calendar.app.created',CAL_API='https://www.googleapis.com/calendar/v3',CAL_NAME='業務秘書';
 function gcalOn(){return !!(S&&S.settings.gcal&&S.settings.gcal.enabled&&S.settings.gcal.calendarId)}
 function scopes(extra){return SCOPES+((extra||gcalOn())?' '+CAL_SCOPE:'')}
@@ -466,7 +475,7 @@ function taskToEvent(t){
   const c=t.clientId?C(t.clientId):null;const name=(c&&!c.deleted)?c.name:'';
   const summary=(t.done?'✅ ':'')+t.title+(name&&!t.title.includes(name)?`（${name}）`:'');
   const desc=[t.note||'',name?`客戶：${name}${c.phone?' '+c.phone:''}`:'',t.type?`類型：${t.type}`:'','— 由業務秘書同步'].filter(Boolean).join('\n');
-  const ev={summary,description:desc,extendedProperties:{private:{ssId:t.id}}};
+  const ev={summary,description:desc,colorId:(CATS.find(x=>x[0]===taskCat(t))||CATS[1])[2],extendedProperties:{private:{ssId:t.id}}};
   if(t.time&&/^\d{2}:\d{2}$/.test(t.time)){const e=shiftTime(t.date,t.time,60);ev.start={dateTime:`${t.date}T${t.time}:00`,timeZone:'Asia/Taipei'};ev.end={dateTime:`${e.date}T${e.time}:00`,timeZone:'Asia/Taipei'}}
   else{ev.start={date:t.date};ev.end={date:nextDay(t.date)}}
   return ev;
@@ -478,6 +487,7 @@ function eventToTask(ev,t){
   if(ev.start&&ev.start.dateTime){const d=new Date(ev.start.dateTime);o.date=iso(d);o.time=`${pad(d.getHours())}:${pad(d.getMinutes())}`}
   else if(ev.start&&ev.start.date){o.date=ev.start.date;o.time=''}
   o.note=(ev.description||'').split('\n').filter(l=>!/^(客戶：|類型：|— 由業務秘書同步)/.test(l)).join('\n').trim();
+  if(ev.colorId){const c=CATS.find(x=>x[2]===String(ev.colorId));if(c)o.cat=c[0]} // 在 Google 日曆改成紅 / 黃 / 綠也會同步回來
   return o;
 }
 async function gcalSync(opts={}){
@@ -626,7 +636,7 @@ function clientRow(c,extra){
 function stageBadges(c){return `<span class="badge sale">${esc(c.salesStage||'名單')}</span>${c.recruitActive?`<span class="badge recruit">增員・${esc(c.recruitStage||'未啟動')}</span>`:''}`}
 function taskRow(t){
   const c=t.clientId?C(t.clientId):null;
-  return `<div class="task ${t.done?'done':''}">
+  return `<div class="task ${t.done?'done':''} c${taskCat(t)}" title="${esc(catLabel(taskCat(t)))}">
     <input type="checkbox" data-act="toggleTask" data-id="${t.id}" ${t.done?'checked':''}>
     <div class="main"><div class="t">${t.time?`<span class="muted">${esc(t.time)}</span> `:''}${esc(t.title)} ${t.type==='行程'?'<span class="badge gray">行程</span>':''}</div>
     <div class="d small muted">${fmtDate(t.date,true)}${c?` ・ <a href="#" data-act="openClient" data-id="${c.id}">${esc(c.name)}</a>`:''}${t.note?' ・ '+esc(t.note):''}</div></div>
@@ -764,7 +774,8 @@ function viewSchedule(){
   const html=dates.map(d=>{const cls=d<t?'over':d===t?'today':'';const label=d<t?`逾期 ・ ${fmtDate(d,true)}`:d===t?`今天 ・ ${fmtDate(d,true)}`:`${fmtDate(d,true)}${daysBetween(t,d)<=7?`（${daysBetween(t,d)} 天後）`:''}`;
     return `<div class="daygroup ${cls}"><h4>${label}</h4><div class="card" style="padding:4px 14px">${groups[d].map(taskRow).join('')}</div></div>`}).join('');
   return `<div class="row sb" style="margin-bottom:6px"><h1>行程與待辦</h1><div class="row"><label class="chk small" style="margin:0"><input type="checkbox" data-act="toggleShowDone" ${ui.showDone?'checked':''}>顯示已完成</label><button class="btn" data-act="exportIcs" title="匯出成行事曆檔，可匯入 Google 日曆">📅 匯出行事曆</button><button class="btn p" data-act="addTask">＋ 新增</button></div></div>
-  <p class="small muted" style="margin:0 0 6px">每筆旁的 📅 可直接加到 Google 日曆；「匯出行事曆」會產生 .ics 檔，含所有未完成事項與客戶生日。</p>
+  <div class="legend" style="margin:0 0 8px">${CATS.map(([k])=>`<span>${catDot(k)}${esc(catLabel(k))}</span>`).join('')}<span class="muted">（顏色名稱可在「設定 → 提醒規則」修改）</span></div>
+  ${gcalOn()?'':`<p class="small muted" style="margin:0 0 6px">每筆旁的 📅 可直接加到 Google 日曆；「匯出行事曆」會產生 .ics 檔，含所有未完成事項與客戶生日。</p>`}
   ${dates.length?html:'<div class="card empty">目前沒有行程或待辦</div>'}`;
 }
 
@@ -820,6 +831,8 @@ function viewSettings(){
       <label class="f"><span class="l">生日提前幾天提醒</span><input type="number" name="birthdayDays" min="0" value="${st.birthdayDays}"></label>
       <label class="f"><span class="l">保單週年提前幾天提醒</span><input type="number" name="anniversaryDays" min="0" value="${st.anniversaryDays}"></label>
       <label class="f"><span class="l">增員對象幾天沒聯絡要追蹤</span><input type="number" name="recruitDays" min="1" value="${st.recruitDays}"></label>
+      <div class="w"><span class="l">行程顏色的名稱</span></div>
+      ${CATS.map(([k])=>`<label class="f"><span class="l">${catDot(k)}${k==='r'?'紅':k==='y'?'黃':'綠'}色代表</span><input type="text" name="cat_${k}" value="${esc(catLabel(k))}" placeholder="${esc(CAT_DEFAULT_LABELS[k])}"></label>`).join('')}
       <div class="w"><button class="btn p">儲存規則</button></div>
     </form>
    </div>
@@ -1212,10 +1225,11 @@ function taskForm(t,clientId){
     <label class="f"><span class="l">時間（選填）</span><input type="time" name="time" value="${esc(t.time||'')}"></label>
     <label class="f"><span class="l">類型</span><select name="type">${opt(['待辦','行程'],t.type||(t.time?'行程':'待辦'))}</select></label>
     <label class="f"><span class="l">相關客戶</span><select name="clientId"><option value="">（無）</option>${clients.map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
+    <div class="f w"><span class="l">性質（顏色）</span><div class="chips">${CATS.map(([k])=>`<label class="chip"><input type="radio" name="cat" value="${k}" ${(t.cat||(cid?'r':'y'))===k?'checked':''}>${catDot(k)}${esc(catLabel(k))}</label>`).join('')}</div></div>
     <label class="f w"><span class="l">備註</span><input type="text" name="note" value="${esc(t.note||'')}"></label>
   </div>`;
   modal(t.id?'編輯行程 / 待辦':'新增行程 / 待辦',inner,o=>{
-    put('tasks',Object.assign({},t,{id:t.id||uid(),title:o.title,date:o.date,time:o.time,type:o.type,clientId:o.clientId,note:o.note,done:!!t.done}));
+    put('tasks',Object.assign({},t,{id:t.id||uid(),title:o.title,date:o.date,time:o.time,type:o.type,clientId:o.clientId,note:o.note,cat:o.cat||'y',done:!!t.done}));
     closeModal();render();toast('已儲存');
   },t.id?`<button type="button" class="btn d" data-act="delTask" data-id="${t.id}">刪除</button>`:'');
 }
@@ -1341,7 +1355,7 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('input',e=>{if(e.target.dataset.act==='search'){ui.q=e.target.value;ui.focusSearch=true;render()}else if(e.target.id==='pickSearch'){ui.pick.q=e.target.value;renderPickList(ui.listId)}});
 document.addEventListener('submit',e=>{
-  if(e.target.dataset.act==='saveRules'){e.preventDefault();const fd=new FormData(e.target);setSettings({owner:fd.get('owner').trim(),staleDays:+fd.get('staleDays')||30,birthdayDays:+fd.get('birthdayDays')||0,anniversaryDays:+fd.get('anniversaryDays')||0,recruitDays:+fd.get('recruitDays')||3});render();toast('規則已儲存')}
+  if(e.target.dataset.act==='saveRules'){e.preventDefault();const fd=new FormData(e.target);setSettings({owner:fd.get('owner').trim(),staleDays:+fd.get('staleDays')||30,birthdayDays:+fd.get('birthdayDays')||0,anniversaryDays:+fd.get('anniversaryDays')||0,recruitDays:+fd.get('recruitDays')||3,catLabels:{r:(fd.get('cat_r')||'').trim()||CAT_DEFAULT_LABELS.r,y:(fd.get('cat_y')||'').trim()||CAT_DEFAULT_LABELS.y,g:(fd.get('cat_g')||'').trim()||CAT_DEFAULT_LABELS.g}});render();toast('規則已儲存')}
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
