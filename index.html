@@ -1,0 +1,1250 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b3d91">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>業務秘書</title>
+<link rel="manifest" href="manifest.webmanifest">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#f4f6fa;--card:#fff;--text:#1b2430;--muted:#66717f;--line:#e2e7ee;
+  --brand:#0b3d91;--brand-2:#1f5bd6;--ok:#1d8f4e;--warn:#c77700;--bad:#c62828;--sale:#1f5bd6;--recruit:#7b3fa0;
+  --r:12px;--shadow:0 1px 2px rgba(16,24,40,.06),0 1px 8px rgba(16,24,40,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#121820;--card:#1b232e;--text:#e8edf3;--muted:#9aa6b4;--line:#2b3542;--brand:#5b8def;--brand-2:#6f9cf5;--shadow:none}
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,"Segoe UI","Noto Sans TC","Microsoft JhengHei",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--brand-2);text-decoration:none}
+h1,h2,h3{margin:0 0 .4em;line-height:1.3}
+h1{font-size:22px}h2{font-size:18px}h3{font-size:16px}
+.muted{color:var(--muted)}.small{font-size:13px}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+.side{background:var(--brand);color:#fff;padding:20px 14px;position:sticky;top:0;height:100vh}
+.side .logo{font-weight:700;font-size:19px;margin:4px 8px 22px;letter-spacing:.5px}
+.side nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;color:#dfe7f7;padding:11px 12px;border-radius:10px;cursor:pointer;font-size:15px}
+.side nav button.on{background:rgba(255,255,255,.16);color:#fff;font-weight:600}
+.side nav button:hover{background:rgba(255,255,255,.1)}
+.side .foot{position:absolute;bottom:18px;left:14px;right:14px;font-size:12px;color:#b9c7e6}
+main{padding:22px 26px 90px;max-width:1240px;width:100%}
+.tabbar{display:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
+.card h3{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:#e9eef8;color:var(--brand);font-weight:600;white-space:nowrap}
+.badge.sale{background:#e6eefc;color:var(--sale)}.badge.recruit{background:#f1e8f8;color:var(--recruit)}
+.badge.warn{background:#fff3e0;color:var(--warn)}.badge.bad{background:#fdecea;color:var(--bad)}.badge.ok{background:#e6f4ea;color:var(--ok)}
+.badge.gray{background:#eef1f5;color:var(--muted)}
+@media (prefers-color-scheme:dark){.badge{background:#243149}.badge.sale{background:#213457}.badge.recruit{background:#36264a}.badge.warn{background:#4a3410}.badge.bad{background:#4a1f1f}.badge.ok{background:#1e3a2a}.badge.gray{background:#2b3542}}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--brand-2)}
+.btn.p{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
+.btn.d{color:var(--bad);border-color:#f1c2c2}
+.btn.s{padding:5px 10px;font-size:13px;border-radius:8px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--brand-2)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sb{justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.kpi .card{margin:0;padding:12px 14px;cursor:pointer}
+.kpi .n{font-size:26px;font-weight:700;color:var(--brand-2)}
+.kpi .l{font-size:13px;color:var(--muted)}
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:12px;align-items:flex-start;padding:11px 4px;border-top:1px solid var(--line);cursor:pointer}
+.item:first-child{border-top:0}
+.item:hover{background:rgba(31,91,214,.04)}
+.item .main{flex:1;min-width:0}
+.item .t{font-weight:600}
+.item .d{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.item .r{text-align:right;font-size:13px;color:var(--muted);white-space:nowrap}
+.avatar{width:38px;height:38px;border-radius:50%;background:#dfe7f7;color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.empty{color:var(--muted);padding:14px 4px;text-align:center}
+input[type=text],input[type=search],input[type=date],input[type=time],input[type=number],input[type=password],input[type=email],input[type=tel],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--text)}
+textarea{min-height:76px;resize:vertical}
+label.f{display:block;margin-bottom:10px}
+label.f span.l{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.fgrid .w{grid-column:1/-1}
+.chk{display:flex;align-items:center;gap:8px;margin:6px 0 12px;cursor:pointer}
+.chk input{width:18px;height:18px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
+.chip input{display:none}.chip:has(input:checked){background:var(--brand-2);border-color:var(--brand-2);color:#fff}
+.chips.sm .chip{padding:3px 9px;font-size:12px}
+.stat{display:grid;grid-template-columns:1fr auto auto;gap:4px 14px;font-size:14px}.stat .h{font-size:12px;color:var(--muted)}.stat b{font-size:16px}
+.modal{position:fixed;inset:0;background:rgba(10,15,25,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:14px}
+.modal .box{background:var(--card);border-radius:16px;width:100%;max-width:680px;max-height:92vh;overflow:auto;padding:20px 22px}
+.modal h3{margin-bottom:14px}
+.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;position:sticky;bottom:-20px;background:var(--card);padding:12px 0 2px}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#222c3a;color:#fff;padding:10px 16px;border-radius:10px;z-index:99;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw}
+.two{display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:start}
+.sec{margin-top:18px}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:4px 10px;font-size:14px}
+.kv .k{color:var(--muted)}
+.log{border-left:3px solid var(--line);padding:6px 12px;margin:10px 0}
+.log.survey{border-color:var(--warn)}
+.log .h{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.log p{margin:4px 0;white-space:pre-wrap}
+.ob{background:#fff8e6;border-radius:8px;padding:6px 10px;font-size:14px;margin-top:4px;white-space:pre-wrap}
+@media (prefers-color-scheme:dark){.ob{background:#3a2d12}}
+.task{display:flex;gap:10px;align-items:flex-start;padding:9px 2px;border-top:1px solid var(--line)}
+.task:first-child{border-top:0}
+.task input{width:20px;height:20px;margin-top:3px;flex:none}
+.task.done .t{text-decoration:line-through;color:var(--muted)}
+.task .main{flex:1}
+.banner{background:#fff3e0;color:#6b4300;border:1px solid #ffd59a;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media (prefers-color-scheme:dark){.banner{background:#4a3410;color:#ffd9a0;border-color:#6b4a14}}
+.fab{display:none}
+.daygroup{margin-top:14px}
+.daygroup h4{margin:0 0 4px;font-size:14px;color:var(--muted);font-weight:600}
+.daygroup.today h4{color:var(--brand-2)}
+.daygroup.over h4{color:var(--bad)}
+.rep{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px}
+.rep.p5{grid-template-columns:1fr 1fr 1fr 1fr 1fr auto}
+.rep input{padding:7px 9px}
+.center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.center .card{width:100%;max-width:420px;padding:26px}
+.help p{margin:6px 0}
+.help li{margin:4px 0}
+code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-size:13px}
+.hide{display:none!important}
+@media (max-width:1000px){
+  .two{grid-template-columns:1fr}
+  .two.detail .pane-list{display:none}
+  .two:not(.detail) .pane-detail{display:none}
+  .grid3{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .shell{grid-template-columns:1fr}
+  .side{display:none}
+  main{padding:14px 14px 96px}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:40;padding-bottom:env(safe-area-inset-bottom)}
+  .tabbar button{flex:1;background:none;border:0;padding:9px 0 7px;color:var(--muted);font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+  .tabbar button .i{font-size:20px;line-height:1}
+  .tabbar button.on{color:var(--brand-2);font-weight:600}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .fgrid{grid-template-columns:1fr}
+  .fab{display:flex;position:fixed;right:18px;bottom:76px;width:54px;height:54px;border-radius:50%;background:var(--brand-2);color:#fff;border:0;font-size:30px;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(31,91,214,.4);z-index:41;cursor:pointer}
+  .modal{align-items:flex-end;padding:0}
+  .modal .box{border-radius:16px 16px 0 0;max-height:94vh}
+  .rep,.rep.p5{grid-template-columns:1fr 1fr;}
+  .rep .del{grid-column:1/-1;justify-self:end}
+  .kpi{grid-template-columns:1fr 1fr}
+}
+@media print{.side,.tabbar,.fab,.btn{display:none!important}main{padding:0}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+'use strict';
+/* ========= 常數 ========= */
+const APP_NAME='業務秘書';
+const APP_VERSION='2.0';
+const GOOGLE_CLIENT_ID='615249101814-ogv3iv1jktag6hueptfakj37l1pejfuh.apps.googleusercontent.com';  // 管理者填入 Google OAuth「網頁應用程式」用戶端 ID；留空則只能離線使用
+const CLOUD_FILE='secretary-sync.json';
+const SCOPES='https://www.googleapis.com/auth/drive.appdata openid email profile';
+const DRIVE='https://www.googleapis.com/drive/v3',DRIVE_UP='https://www.googleapis.com/upload/drive/v3';
+const WEB_ORIGIN=location.protocol==='https:'||location.hostname==='localhost';
+function clientId(){let o='';try{o=localStorage.getItem('ss.clientId')||''}catch{}return (o||GOOGLE_CLIENT_ID||'').trim()}
+function googleAvailable(){return WEB_ORIGIN&&!!clientId()}
+const SALES_STAGES=['名單','已接觸','需求訪談','建議書','成交','保全服務','暫停'];
+const RECRUIT_STAGES=['未啟動','聊過意願','邀約說明會','面談','考照中','已報到','暫停'];
+const LOG_TYPES=['拜訪','實地調查','電話','LINE/訊息','聚會/活動','其他'];
+const SOURCES=['緣故','轉介紹','陌生開發','職域','網路','其他'];
+const RELATIONS=['配偶','子女','父','母','兄弟姊妹','其他'];
+const POLICY_TYPES=['壽險','醫療','意外','儲蓄/年金','投資型','長照/失能','車險/產險','其他'];
+const PAY_MODES=['年繳','半年繳','季繳','月繳','躉繳'];
+const POLICY_STATUS=['有效','停效','已滿期','已解約'];
+const CALL_STATUS=['未撥','未接','已接通','再聯絡','拒絕','約訪成功'];
+const DEFAULT_TOPIC_PROMPT=`每天早上以台灣時間查核當日、前一交易日及前72小時最新重大新聞，產出『每日保險業務破冰時事』，以熱門性、實際影響和具體內容為優先。每天必須先做『重大事件掃描』，特別查台股前一交易日與最近數日的收盤、漲跌點數和百分比、成交量、美股與全球市場重大變化、台積電與主要權值股、匯率及利率，以及民生、科技、社會熱門事件。若台股出現單日約2%以上漲跌、重大歷史跌點／漲點、連續顯著波動，或其他重大影響一般民眾資產的市場事件，原則上必須列入三個主題之一（優先民生財經），不能被冷門趣聞、空洞統計或公關稿取代。若當天不選重大事件，明確說明原因。務必區分盤中與收盤、今天與前一交易日，不得誤稱連跌；標出日期、指數、點數、百分比、主要驅動因素及合理不確定性，列來源連結。其餘話題原則平均配：①社群熱門②熱門深度議題③民生財經，重大事件優先於硬性分類。每則新聞須多方查核，附3至5項有內容的事實細節、新聞日期與來源、適合客群、自然口語開場白、2個延伸問題、完整6至10輪業務／客戶需求挖掘對話（生活現況→影響→現有準備→確認需求→徵求同意檢視保單）、有興趣和沒興趣兩種回應分支，以及可討論的保障、理賠條件、除外／等待期與現金流適合度。面對股市暴跌，優先談投資資金用途、風險承受度、資產配置、短期用錢需求與緊急預備金，不能恐嚇、趁跌推銷儲蓄險或投資型保單，也不能推測客戶虧損。科技AI題材要有具體應用及生活影響，不只報導導入率。避開政治爭議、悲劇與無感冷門新聞，不為湊三則選弱題；最後說明當日首選與理由。使用台灣自然繁體中文。`;
+const CHANNELS=['本人承作','其他安聯同事','他公司業務員','銀行 / 郵局','網路投保','公司團保','不清楚'];
+const AGENT_RELS=['親戚','朋友 / 同學','鄰居 / 同事','家人','陌生開發來的','不清楚'];
+const PURPOSES=['醫療保障','意外保障','重大傷病 / 癌症','子女教育金','退休規劃','儲蓄','資產傳承 / 節稅','房貸壽險','長照 / 失能','人情保單','團保補強'];
+const PROFILE_CATS=[
+ ['family','家庭狀況',['已婚','未婚','離異','新婚','準備生育','有小孩','小孩在學','小孩已成年','單親','與父母同住','父母年長需照顧','空巢期']],
+ ['housing','居住',['自有住宅','租屋','與家人同住','透天','公寓','電梯大樓','有房貸','近期想換屋']],
+ ['finance','經濟與工作',['雙薪家庭','單薪家庭','企業主','主管','公務員','自由業','退休','有車','多台車','有投資習慣','有車貸','收入穩定','收入起伏大']],
+ ['interests','興趣',['運動健身','登山','跑步','高爾夫','旅遊','美食','親子活動','投資理財','閱讀','音樂','園藝','寵物','宗教信仰','攝影','露營','棒球','追劇','手作']],
+ ['health','健康',['有運動習慣','體況良好','有慢性病','家族病史','抽菸','飲酒','近期健檢異常']],
+ ['decision','決策與態度',['本人決定','配偶決定','父母有影響力','共同決定','已有其他保險','對保險觀望','對保險反感','積極想了解','重視醫療','重視退休','重視子女教育','重視資產傳承']],
+];
+const IMPORT_MAP={name:['姓名','客戶','名字','name'],phone:['電話','手機','行動','phone','mobile'],line:['line'],email:['email','信箱','電子郵件'],address:['地址','住址'],birthday:['生日','出生'],gender:['性別'],company:['公司','服務單位'],job:['職業','職稱'],source:['來源'],referrer:['介紹人'],tags:['標籤'],notes:['備註','說明'],idNo:['身分證','身份證']};
+const NAV=[['today','今日','📋'],['clients','客戶','👥'],['schedule','行程','📅'],['lists','名單','📞'],['settings','設定','⚙️']];
+
+/* ========= 工具 ========= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today=()=>iso(new Date());
+const parseDate=s=>{if(!s)return null;const d=new Date(s+'T00:00:00');return isNaN(d)?null:d};
+const daysBetween=(a,b)=>Math.round((parseDate(b)-parseDate(a))/864e5);
+const daysSince=s=>s?daysBetween(s,today()):null;
+const ago=d=>d===null?'':d===0?'今天':d===1?'昨天':`${d} 天前`;
+const WD=['日','一','二','三','四','五','六'];
+function fmtDate(s,withWd){const d=parseDate(s);if(!d)return s||'';const t=`${d.getMonth()+1}/${d.getDate()}`;return withWd?`${t}（${WD[d.getDay()]}）`:t}
+function daysUntilAnnual(s){ // 'YYYY-MM-DD' 或 'MM-DD' → 距下次週年的天數
+  if(!s)return null;const md=s.slice(-5);if(!/^\d\d-\d\d$/.test(md))return null;
+  const t=new Date();t.setHours(0,0,0,0);let y=t.getFullYear();
+  let d=new Date(`${y}-${md}T00:00:00`);if(isNaN(d))return null;
+  if(d<t)d=new Date(`${y+1}-${md}T00:00:00`);return Math.round((d-t)/864e5);
+}
+function ageOf(b){const d=parseDate(b);if(!d||b.length<10)return null;const t=new Date();let a=t.getFullYear()-d.getFullYear();if(t<new Date(t.getFullYear(),d.getMonth(),d.getDate()))a--;return a}
+function money(n){return n?Number(n).toLocaleString('zh-TW'):''}
+let toastTimer;function toast(m){let t=$('.toast');if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',2600)}
+
+/* ========= 加密 ========= */
+const enc=new TextEncoder(),dec=new TextDecoder();
+function b64(buf){const u=new Uint8Array(buf);let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function ub64(s){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+const ITER=200000;
+async function deriveKey(pass,salt,iter){const km=await crypto.subtle.importKey('raw',enc.encode(pass),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter||ITER,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+let keyCache={pass:null,salt:null,key:null};
+async function encryptObj(obj,pass){
+  if(keyCache.pass!==pass){const salt=crypto.getRandomValues(new Uint8Array(16));keyCache={pass,salt,key:await deriveKey(pass,salt)}}
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},keyCache.key,enc.encode(JSON.stringify(obj)));
+  return {app:'sales-secretary',v:1,iter:ITER,salt:b64(keyCache.salt),iv:b64(iv),data:b64(ct),savedAt:Date.now()};
+}
+async function decryptObj(pkg,pass){
+  if(!pkg||pkg.app!=='sales-secretary')throw new Error('不是本系統的同步檔');
+  const key=await deriveKey(pass,ub64(pkg.salt),pkg.iter);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:ub64(pkg.iv)},key,ub64(pkg.data));
+  return JSON.parse(dec.decode(pt));
+}
+
+/* ========= 本機儲存 (IndexedDB) ========= */
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('sales-secretary',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function kvGet(k){const db=await idb();return new Promise((res,rej)=>{const t=db.transaction('kv').objectStore('kv').get(k);t.onsuccess=()=>res(t.result);t.onerror=()=>rej(t.error)})}
+async function kvSet(k,v){const db=await idb();return new Promise((res,rej)=>{const t=db.transaction('kv','readwrite').objectStore('kv').put(v,k);t.onsuccess=()=>res();t.onerror=()=>rej(t.error)})}
+async function kvDel(k){const db=await idb();return new Promise((res,rej)=>{const t=db.transaction('kv','readwrite').objectStore('kv').delete(k);t.onsuccess=()=>res();t.onerror=()=>rej(t.error)})}
+
+/* ========= 狀態 ========= */
+let S=null,PASS=null,FH=null,lastFileMod=0,TH=null,topicLastRead=0,topicPermOK=false;
+let MODE=localStorage.getItem('ss.mode')||'local',GACCT=null;try{GACCT=JSON.parse(localStorage.getItem('ss.gacct')||'null')}catch{}
+const ui={view:'today',clientId:null,q:'',filter:'all',sales:'',recruit:'',showDone:false,tab:'logs',showId:null,select:false,selected:new Set(),listId:null,pick:{q:'',f:'all'},sort:'name'};
+const blank=()=>({v:3,clients:{},logs:{},tasks:{},policies:{},lists:{},listItems:{},settings:{staleDays:30,birthdayDays:7,anniversaryDays:30,recruitDays:3,owner:'',updatedAt:0}});
+const live=col=>Object.values(S[col]).filter(x=>!x.deleted);
+const C=id=>S.clients[id];
+function clientLogs(id){return live('logs').filter(l=>l.clientId===id).sort((a,b)=>b.date.localeCompare(a.date)||b.updatedAt-a.updatedAt)}
+function clientTasks(id){return live('tasks').filter(t=>t.clientId===id).sort((a,b)=>a.date.localeCompare(b.date))}
+function lastContact(id){const l=clientLogs(id)[0];return l?l.date:null}
+function clientPolicies(id){return live('policies').filter(p=>p.clientId===id).sort((a,b)=>(a.date||'').localeCompare(b.date||''))}
+function migrate(st){ // 舊版資料升級：保單從客戶內移到獨立集合
+  let changed=false;if(!st.policies){st.policies={};changed=true}if(!st.lists){st.lists={};changed=true}if(!st.listItems){st.listItems={};changed=true}
+  for(const c of Object.values(st.clients||{})){
+    if(Array.isArray(c.policies)){for(const p of c.policies){const id=uid();st.policies[id]={id,clientId:c.id,company:p.company||'',product:p.product||'',type:'',policyNo:'',holder:c.name,insured:c.name,date:p.date||'',years:'',payMode:'年繳',premium:p.premium||'',amount:'',status:'有效',note:p.note||'',createdAt:c.updatedAt||Date.now(),updatedAt:c.updatedAt||Date.now()}}delete c.policies;changed=true}
+  }
+  return changed;
+}
+const ID_MAP={A:10,B:11,C:12,D:13,E:14,F:15,G:16,H:17,I:34,J:18,K:19,L:20,M:21,N:22,O:35,P:23,Q:24,R:25,S:26,T:27,U:28,V:29,W:32,X:30,Y:31,Z:33};
+function validTwId(s){s=(s||'').toUpperCase();if(!/^[A-Z][1289]\d{8}$/.test(s))return false;const n=ID_MAP[s[0]];let sum=Math.floor(n/10)+(n%10)*9;const w=[8,7,6,5,4,3,2,1];for(let i=0;i<8;i++)sum+=(+s[i+1])*w[i];sum+=(+s[9]);return sum%10===0}
+const maskId=s=>s?s.slice(0,3)+'****'+s.slice(-3):'';
+function invRel(r,g){return r==='配偶'?'配偶':r==='子女'?(g==='男'?'父':g==='女'?'母':'其他'):(r==='父'||r==='母')?'子女':r==='兄弟姊妹'?'兄弟姊妹':'其他'}
+function heldText(d){const st=parseDate(d);if(!st)return '';const t=new Date();let m=(t.getFullYear()-st.getFullYear())*12+(t.getMonth()-st.getMonth());if(t.getDate()<st.getDate())m--;if(m<0)return '尚未生效';const y=Math.floor(m/12),mm=m%12;return y?`${y} 年${mm?` ${mm} 個月`:''}`:`${mm} 個月`}
+function policyNext(p){ // 下次繳費或週年 → {days,kind}
+  if(!p.date)return null;const start=parseDate(p.date);if(!start)return null;
+  const months={'年繳':12,'半年繳':6,'季繳':3,'月繳':1}[p.payMode];
+  const yrs=+p.years||0;const t=new Date();t.setHours(0,0,0,0);
+  const paidUp=!months||(yrs>0&&new Date(start.getFullYear()+yrs,start.getMonth(),start.getDate())<=t);
+  if(paidUp){const d=daysUntilAnnual(p.date);return d===null?null:{days:d,kind:'週年'}}
+  let d=new Date(start),g=0;while(d<t&&g<3000){d=new Date(d.getFullYear(),d.getMonth()+months,start.getDate());g++}
+  return {days:Math.round((d-t)/864e5),kind:'繳費'};
+}
+function put(col,obj){obj.updatedAt=Date.now();if(!obj.createdAt)obj.createdAt=obj.updatedAt;S[col][obj.id]=obj;save();return obj}
+function del(col,id){const o=S[col][id];if(o){o.deleted=true;o.updatedAt=Date.now();save()}}
+function setSettings(p){Object.assign(S.settings,p,{updatedAt:Date.now()});save()}
+
+let saveTimer;
+function save(){clearTimeout(saveTimer);saveTimer=setTimeout(doSave,400)}
+async function doSaveLocal(){const pkg=await encryptObj(S,PASS);await kvSet('blob',pkg)}
+async function doSave(){try{await doSaveLocal();if(MODE==='google'){cloudDirty=true;try{localStorage.setItem('ss.cloudDirty','1')}catch{}scheduleCloudSync()}else scheduleFileWrite()}catch(e){console.error(e);toast('儲存失敗：'+e.message)}}
+
+function mergeState(a,b){
+  const out=blank();let changed=0,localNewer=0;
+  for(const col of ['clients','logs','tasks','policies','lists','listItems']){
+    const ids=new Set([...Object.keys(a[col]||{}),...Object.keys(b[col]||{})]);
+    for(const id of ids){const x=(a[col]||{})[id],y=(b[col]||{})[id];
+      if(!x){out[col][id]=y;changed++}else if(!y){out[col][id]=x;localNewer++}else if((y.updatedAt||0)>(x.updatedAt||0)){out[col][id]=y;changed++}else{out[col][id]=x;if((x.updatedAt||0)>(y.updatedAt||0))localNewer++}}
+  }
+  const sa=(a.settings||{}).updatedAt||0,sb=(b.settings||{}).updatedAt||0;
+  out.settings=sb>sa?b.settings:a.settings;if(sa>sb)localNewer++;
+  return {state:out,changed,localNewer};
+}
+
+/* ========= PC 同步檔 (File System Access) ========= */
+const FS_OK=!!window.showSaveFilePicker;
+const FILE_TYPES=[{description:'業務秘書同步檔',accept:{'application/json':['.json']}}];
+async function linkFile(existing){
+  if(!FS_OK){alert('這個瀏覽器不支援直接連結檔案，請用 Chrome 或 Edge，或改用「匯出 / 匯入」。');return}
+  try{
+    if(existing){const [h]=await showOpenFilePicker({types:FILE_TYPES,multiple:false});FH=h}
+    else{FH=await showSaveFilePicker({suggestedName:'業務秘書同步檔.json',types:FILE_TYPES})}
+    await kvSet('handle',FH);
+    if(existing){await pullFile(true)}else{await writeFile();toast('已建立同步檔，之後會自動寫入')}
+    render();
+  }catch(e){if(e.name!=='AbortError'){alert('連結失敗：'+e.message)}}
+}
+async function unlinkFile(){FH=null;await kvDel('handle');toast('已解除連結');render()}
+async function hasPerm(ask){if(!FH)return false;let p=await FH.queryPermission({mode:'readwrite'});if(p==='granted')return true;if(!ask)return false;p=await FH.requestPermission({mode:'readwrite'});return p==='granted'}
+async function pullFile(force){
+  if(!FH||!(await hasPerm(false)))return false;
+  const f=await FH.getFile();
+  if(!force&&f.lastModified<=lastFileMod)return false;
+  lastFileMod=f.lastModified;
+  if(!f.size)return false;
+  let remote;
+  try{remote=await decryptObj(JSON.parse(await f.text()),PASS)}
+  catch(e){toast('同步檔無法解密：密碼不同或檔案損毀');return false}
+  markSync();migrate(remote);const {state,changed}=mergeState(S,remote);S=state;
+  if(changed){save();render();toast(`已從同步檔合併 ${changed} 筆更新`)}
+  return true;
+}
+let fileTimer;
+function scheduleFileWrite(){if(!FH)return;clearTimeout(fileTimer);fileTimer=setTimeout(writeFile,1500)}
+async function writeFile(){
+  if(!FH||!(await hasPerm(false)))return;
+  try{const w=await FH.createWritable();await w.write(JSON.stringify(await encryptObj(S,PASS)));await w.close();const f=await FH.getFile();lastFileMod=f.lastModified;markSync();setSyncStatus('已寫入同步檔 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}))}
+  catch(e){console.error(e);toast('寫入同步檔失敗：'+e.message)}
+}
+function setSyncStatus(t){const el=$('#syncStatus');if(el)el.textContent=t}
+window.addEventListener('focus',()=>{if(S&&FH)pullFile(false);if(S)refreshTopic(false);if(S&&MODE==='google')cloudSyncThrottled()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){if(FH)pullFile(false);refreshTopic(false);if(MODE==='google')cloudSyncThrottled()}});
+window.addEventListener('online',()=>{if(S&&MODE==='google')cloudSync()});
+
+/* ========= Google 登入 + 雲端硬碟自動同步 ========= */
+let tokenClient=null,GTOK=null,cloudBusy=false,cloudPending=false,cloudTimer=null,needAuth=false,lastCloudCheck=0;
+let cloudDirty=localStorage.getItem('ss.cloudDirty')==='1',lastCloudMod=localStorage.getItem('ss.cloudMod')||'';
+try{GTOK=JSON.parse(localStorage.getItem('ss.gtok')||'null')}catch{}
+const timeNow=()=>new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+function gisReady(){return new Promise(res=>{const t0=Date.now();(function chk(){if(window.google&&google.accounts&&google.accounts.oauth2)return res(true);if(Date.now()-t0>8000)return res(false);setTimeout(chk,100)})()})}
+async function getTokenClient(){if(tokenClient)return tokenClient;if(!(await gisReady()))throw new Error('Google 登入元件載入失敗，請確認有網路後重新整理');
+  tokenClient=google.accounts.oauth2.initTokenClient({client_id:clientId(),scope:SCOPES,callback:()=>{},error_callback:()=>{}});return tokenClient}
+function validTok(){return GTOK&&GTOK.t&&GTOK.exp>Date.now()+60000?GTOK.t:null}
+async function requestToken(kind){ // kind: 'select' | 'silent'
+  const tc=await getTokenClient();
+  return new Promise((res,rej)=>{
+    tc.callback=r=>{if(r&&r.access_token){GTOK={t:r.access_token,exp:Date.now()+((+r.expires_in)||3600)*1000};try{localStorage.setItem('ss.gtok',JSON.stringify(GTOK))}catch{}needAuth=false;res(GTOK.t)}else rej(new Error((r&&r.error)||'no_token'))};
+    tc.error_callback=e=>rej(new Error((e&&e.type)||'popup_failed'));
+    const o={prompt:kind==='select'?'select_account':''};if(kind!=='select'&&GACCT&&GACCT.email)o.hint=GACCT.email;
+    tc.requestAccessToken(o);
+  });
+}
+async function getToken(){const t=validTok();if(t)return t;try{return await requestToken('silent')}catch(e){needAuth=true;throw new Error('NOAUTH')}}
+async function gfetch(url,opt={}){
+  const tok=await getToken();
+  const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({},opt.headers||{},{Authorization:'Bearer '+tok})}));
+  if(r.status===401){GTOK=null;localStorage.removeItem('ss.gtok');needAuth=true;throw new Error('NOAUTH')}
+  if(!r.ok){let m='';try{m=(await r.json()).error.message}catch{}throw new Error(`雲端硬碟回應 ${r.status}${m?'：'+m:''}`)}
+  return r;
+}
+async function cloudFind(){const q=encodeURIComponent(`name='${CLOUD_FILE}' and trashed=false`);const r=await gfetch(`${DRIVE}/files?spaces=appDataFolder&q=${q}&fields=files(id,modifiedTime,size)&orderBy=modifiedTime%20desc&pageSize=5`);return ((await r.json()).files||[])[0]||null}
+async function cloudRead(id){const r=await gfetch(`${DRIVE}/files/${id}?alt=media`);return r.json()}
+async function cloudWrite(id,obj){
+  const body=JSON.stringify(obj);
+  if(id){const r=await gfetch(`${DRIVE_UP}/files/${id}?uploadType=media&fields=id,modifiedTime`,{method:'PATCH',headers:{'Content-Type':'application/json'},body});return r.json()}
+  const meta={name:CLOUD_FILE,parents:['appDataFolder'],mimeType:'application/json'},b='ss_boundary_'+Date.now();
+  const mp=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--`;
+  const r=await gfetch(`${DRIVE_UP}/files?uploadType=multipart&fields=id,modifiedTime`,{method:'POST',headers:{'Content-Type':`multipart/related; boundary=${b}`},body:mp});return r.json();
+}
+function scheduleCloudSync(ms){if(MODE!=='google')return;clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>cloudSync(),ms||2000)}
+function cloudSyncThrottled(){if(Date.now()-lastCloudCheck>20000)cloudSync()}
+async function cloudSync(opts={}){
+  if(MODE!=='google'||!S)return false;
+  if(cloudBusy){cloudPending=true;return false}
+  cloudBusy=true;lastCloudCheck=Date.now();let ok=false;
+  try{
+    setSyncStatus('同步中…');
+    const f=await cloudFind();
+    if(f&&(opts.force||f.modifiedTime!==lastCloudMod)){
+      const remote=await cloudRead(f.id);
+      if(remote&&remote.app==='sales-secretary'&&remote.clients){
+        migrate(remote);const {state,changed,localNewer}=mergeState(S,remote);S=state;
+        if(localNewer)cloudDirty=true;
+        if(changed){await doSaveLocal();render();toast(`已從雲端合併 ${changed} 筆更新`)}
+      }
+      lastCloudMod=f.modifiedTime;
+    }
+    if(!f||cloudDirty||opts.push){
+      const j=await cloudWrite(f?f.id:null,Object.assign({app:'sales-secretary',savedAt:Date.now()},S));
+      if(j&&j.modifiedTime)lastCloudMod=j.modifiedTime;cloudDirty=false;try{localStorage.removeItem('ss.cloudDirty')}catch{}
+    }
+    try{localStorage.setItem('ss.cloudMod',lastCloudMod)}catch{}
+    markSync();setSyncStatus('已同步 '+timeNow());ok=true;
+    if($('#authBanner'))render();
+  }catch(e){
+    if(e.message==='NOAUTH'){setSyncStatus('需要重新連線 Google');if(!$('#authBanner'))render()}
+    else{console.warn(e);setSyncStatus('同步失敗：'+e.message);if(opts.loud)toast('同步失敗：'+e.message)}
+  }finally{cloudBusy=false;if(cloudPending){cloudPending=false;scheduleCloudSync(500)}}
+  return ok;
+}
+function devKey(){let k=null;try{k=localStorage.getItem('ss.devkey')}catch{}if(!k){k=b64(crypto.getRandomValues(new Uint8Array(32)));localStorage.setItem('ss.devkey',k)}return k}
+async function googleSignIn(){
+  if(!googleAvailable()){alert(WEB_ORIGIN?'這個版本尚未設定 Google 登入（需要管理者填入用戶端 ID）。':'Google 登入需要從網址開啟程式，直接開啟檔案無法使用。');return}
+  try{await requestToken('select')}catch(e){if(/popup_closed|access_denied/.test(e.message))return;alert('Google 登入失敗：'+e.message);return}
+  let info={};try{const r=await gfetch('https://www.googleapis.com/oauth2/v3/userinfo');info=await r.json()}catch(e){alert('無法取得帳號資訊：'+e.message);return}
+  GACCT={email:info.email||'',name:info.name||'',picture:info.picture||''};localStorage.setItem('ss.gacct',JSON.stringify(GACCT));
+  MODE='google';localStorage.setItem('ss.mode','google');localStorage.removeItem('ss.pass');
+  PASS=devKey();keyCache={pass:null};
+  if(!S){S=blank();S.settings.owner=GACCT.name||'';S.settings.updatedAt=Date.now()}
+  cloudDirty=true;await doSaveLocal();
+  const ok=await cloudSync({force:true,loud:true});
+  start();
+  if(ok)toast(`已登入 ${GACCT.email}，資料會自動同步`);
+}
+async function wipeDevice(){
+  try{await kvDel('blob');await kvDel('handle');await kvDel('topicHandle')}catch{}
+  for(const k of ['ss.pass','ss.devkey','ss.gacct','ss.gtok','ss.mode','ss.cloudMod','ss.cloudDirty','ss.pinHash','ss.lastSync'])try{localStorage.removeItem(k)}catch{}
+  location.reload();
+}
+async function googleSignOut(){
+  if(cloudDirty){const ok=await cloudSync({loud:true});if(!ok&&!confirm('還有修改尚未同步到雲端，現在登出會遺失這些修改。仍要登出？'))return}
+  else if(!confirm('登出會清除這台裝置上的資料（Google 雲端硬碟上的資料不受影響），下次登入會重新下載。確定登出？'))return;
+  await wipeDevice();
+}
+async function pinHash(pin,salt){const key=await crypto.subtle.importKey('raw',enc.encode(pin),'PBKDF2',false,['deriveBits']);const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:100000,hash:'SHA-256'},key,256);return b64(bits)}
+function pinForm(){
+  modal('設定開啟 PIN',`<label class="f"><span class="l">PIN（4 到 8 位數字）</span><input type="password" inputmode="numeric" name="p1" required></label><label class="f"><span class="l">再輸入一次</span><input type="password" inputmode="numeric" name="p2" required></label><p class="small muted">之後每次開啟程式都要輸入 PIN。忘記 PIN 可以登出再重新登入 Google，資料會從雲端下載回來。</p>`,async o=>{
+    if(!/^\d{4,8}$/.test(o.p1)){alert('PIN 需為 4 到 8 位數字');return}if(o.p1!==o.p2){alert('兩次輸入不同');return}
+    const salt=b64(crypto.getRandomValues(new Uint8Array(8)));localStorage.setItem('ss.pinHash',JSON.stringify({salt,h:await pinHash(o.p1,salt)}));closeModal();render();toast('已設定 PIN');
+  });
+}
+function renderPinLock(){
+  screen(`<h1>🛡 ${APP_NAME}</h1><p class="muted">請輸入 PIN</p><form id="pl"><label class="f"><input type="password" name="p" inputmode="numeric" required autofocus placeholder="PIN"></label><button class="btn p" style="width:100%;justify-content:center">解鎖</button><p id="plErr" class="small" style="color:var(--bad)"></p></form>
+  <p class="small muted" style="margin-top:14px;text-align:center">忘記 PIN？<a href="#" id="plReset">登出並清除這台裝置的資料</a>（雲端資料不受影響）</p>`);
+  $('#pl').addEventListener('submit',async e=>{e.preventDefault();const p=new FormData(e.target).get('p');let ph=null;try{ph=JSON.parse(localStorage.getItem('ss.pinHash'))}catch{}
+    if(ph&&ph.h===await pinHash(p,ph.salt))start();else $('#plErr').textContent='PIN 錯誤'});
+  $('#plReset').addEventListener('click',e=>{e.preventDefault();if(confirm('清除這台裝置的資料並登出？下次登入 Google 會重新下載。'))wipeDevice()});
+}
+function renderWelcome(){
+  if(!googleAvailable()){renderOnboarding();return}
+  screen(`<h1>🛡 ${APP_NAME}</h1><p class="muted">你的客戶與增員秘書。資料存在你自己的 Google 雲端硬碟，手機與電腦自動同步，不經任何其他伺服器。</p>
+  <button class="btn p" id="wGoogle" style="width:100%;justify-content:center;font-size:16px;padding:12px">用 Google 帳號登入並開始</button>
+  <p class="small muted" style="margin-top:10px">第一次登入時 Google 會詢問是否允許「${APP_NAME}」使用它自己的應用程式資料夾，請按允許。程式看不到你雲端硬碟裡的其他檔案。</p>
+  <p class="small muted" style="margin-top:14px;text-align:center"><a href="#" id="wLocal">進階：不用 Google 帳號，離線使用</a></p>`);
+  $('#wGoogle').addEventListener('click',()=>googleSignIn());
+  $('#wLocal').addEventListener('click',e=>{e.preventDefault();renderOnboarding()});
+}
+
+/* ========= 匯出 / 匯入 (手機) ========= */
+async function exportFile(share){
+  let p=PASS;if(MODE==='google'){p=prompt('請為這份備份檔設定一組密碼（之後匯入時需要）：');if(!p)return;if(p.length<6){alert('密碼至少 6 碼');return}}
+  const pkg=await encryptObj(S,p);if(MODE==='google')keyCache={pass:null};
+  const name=`業務秘書同步檔.json`;
+  const file=new File([JSON.stringify(pkg)],name,{type:'application/json'});
+  if(share&&navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:name});markSync();return}catch(e){if(e.name==='AbortError')return}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
+  markSync();toast('已下載，請存到雲端硬碟資料夾');
+}
+function importFile(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;
+    let pkg;try{pkg=JSON.parse(await f.text())}catch{alert('檔案格式不正確');return}
+    let remote;try{remote=await decryptObj(pkg,PASS)}catch{
+      const p=prompt('這個檔案用的密碼和目前不同，請輸入該檔案的密碼：');if(!p)return;
+      try{remote=await decryptObj(pkg,p)}catch{alert('密碼錯誤或檔案損毀');return}}
+    migrate(remote);const {state,changed}=mergeState(S,remote);S=state;markSync();save();render();toast(`匯入完成，合併 ${changed} 筆更新`)};
+  inp.click();
+}
+
+/* ========= 秘書提醒計算 ========= */
+function brief(){
+  const t=today(),st=S.settings,cl=live('clients'),tasks=live('tasks');
+  const todayTasks=tasks.filter(x=>x.date===t&&!x.done).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const overdue=tasks.filter(x=>x.date<t&&!x.done).sort((a,b)=>a.date.localeCompare(b.date));
+  const upcoming=tasks.filter(x=>x.date>t&&!x.done&&daysBetween(t,x.date)<=7).sort((a,b)=>a.date.localeCompare(b.date));
+  const bdays=[];
+  for(const c of cl){
+    const d=daysUntilAnnual(c.birthday);if(d!==null&&d<=st.birthdayDays)bdays.push({client:c,who:c.name,rel:'本人',days:d,date:c.birthday});
+    for(const f of c.family||[]){if(f.clientId&&C(f.clientId)&&!C(f.clientId).deleted)continue;const fd=daysUntilAnnual(f.birthday);if(fd!==null&&fd<=st.birthdayDays)bdays.push({client:c,who:f.name||f.relation,rel:f.relation,days:fd,date:f.birthday})}
+  }
+  bdays.sort((a,b)=>a.days-b.days);
+  const anniv=[];
+  for(const p of live('policies')){const c=C(p.clientId);if(!c||c.deleted)continue;if(p.status&&p.status!=='有效')continue;const r=policyNext(p);if(r&&r.days<=st.anniversaryDays)anniv.push({client:c,policy:p,days:r.days,kind:r.kind})}
+  anniv.sort((a,b)=>a.days-b.days);
+  const stale=cl.filter(c=>c.salesStage!=='暫停'||(c.recruitActive&&c.recruitStage!=='暫停')).map(c=>({client:c,last:lastContact(c.id),days:daysSince(lastContact(c.id))})).filter(x=>x.days===null||x.days>=st.staleDays).sort((a,b)=>(b.days??9999)-(a.days??9999));
+  const recruit=cl.filter(c=>c.recruitActive&&!['未啟動','已報到','暫停'].includes(c.recruitStage)).map(c=>({client:c,days:daysSince(lastContact(c.id))})).filter(x=>x.days===null||x.days>=st.recruitDays).sort((a,b)=>(b.days??9999)-(a.days??9999));
+  return {todayTasks,overdue,upcoming,bdays,anniv,stale,recruit};
+}
+
+/* ========= 畫面 ========= */
+function render(){
+  if(!S)return;
+  const app=$('#app');
+  const navHtml=NAV.map(([k,l,i])=>`<button class="${ui.view===k?'on':''}" data-act="nav" data-v="${k}"><span class="i">${i}</span>${l}</button>`).join('');
+  let body='';
+  if(ui.view==='today')body=viewToday();
+  else if(ui.view==='clients')body=viewClients();
+  else if(ui.view==='schedule')body=viewSchedule();
+  else if(ui.view==='lists')body=viewLists();
+  else body=viewSettings();
+  app.innerHTML=`<div class="shell">
+    <aside class="side"><div class="logo">🛡 ${APP_NAME}</div><nav>${navHtml}</nav><div class="foot">${esc(S.settings.owner||'')}<br>${MODE==='google'?'資料存在你的 Google 雲端硬碟，自動同步':'資料只存在這台裝置與你的加密同步檔'}</div></aside>
+    <main>${body}</main>
+    <nav class="tabbar">${navHtml}</nav>
+    <button class="fab" data-act="quickAdd" title="新增">＋</button>
+  </div>`;
+  const sb=$('#searchBox');if(sb&&ui.focusSearch){sb.focus();sb.setSelectionRange(sb.value.length,sb.value.length);ui.focusSearch=false}
+}
+function clientRow(c,extra){
+  const lc=lastContact(c.id),d=daysSince(lc);
+  return `<div class="item" data-act="${ui.select?'selRow':'openClient'}" data-id="${c.id}">
+    ${ui.select?`<input type="checkbox" data-act="selClient" data-id="${c.id}" ${ui.selected.has(c.id)?'checked':''} style="width:20px;height:20px;margin-top:9px;flex:none">`:''}<div class="avatar">${esc((c.name||'?').slice(0,1))}</div>
+    <div class="main"><div class="t">${esc(c.name)} ${stageBadges(c)}</div>
+    <div class="d">${esc([c.company,c.job,c.source].filter(Boolean).join('・'))}${extra?' '+extra:''}</div></div>
+    <div class="r">${lc?`上次聯絡<br>${fmtDate(lc)}（${ago(d)}）`:'<span class="badge gray">尚未聯絡</span>'}</div></div>`;
+}
+function stageBadges(c){return `<span class="badge sale">${esc(c.salesStage||'名單')}</span>${c.recruitActive?`<span class="badge recruit">增員・${esc(c.recruitStage||'未啟動')}</span>`:''}`}
+function taskRow(t){
+  const c=t.clientId?C(t.clientId):null;
+  return `<div class="task ${t.done?'done':''}">
+    <input type="checkbox" data-act="toggleTask" data-id="${t.id}" ${t.done?'checked':''}>
+    <div class="main"><div class="t">${t.time?`<span class="muted">${esc(t.time)}</span> `:''}${esc(t.title)} ${t.type==='行程'?'<span class="badge gray">行程</span>':''}</div>
+    <div class="d small muted">${fmtDate(t.date,true)}${c?` ・ <a href="#" data-act="openClient" data-id="${c.id}">${esc(c.name)}</a>`:''}${t.note?' ・ '+esc(t.note):''}</div></div>
+    <a class="btn s ghost" data-act="ext" href="${gcalUrl(t)}" target="_blank" rel="noopener" title="加到 Google 日曆">📅</a><button class="btn s ghost" data-act="editTask" data-id="${t.id}">編輯</button></div>`;
+}
+
+function viewToday(){
+  const b=brief();const d=new Date();
+  const sec=(title,items,emptyText,badge)=>`<div class="card"><h3>${title} ${items.length?`<span class="badge ${badge||''}">${items.length}</span>`:''}</h3>${items.length?items.join(''):`<div class="empty">${emptyText}</div>`}</div>`;
+  return `<div class="row sb" style="margin-bottom:12px"><div><h1>${d.getMonth()+1} 月 ${d.getDate()} 日（${WD[d.getDay()]}）</h1><div class="muted">${esc(S.settings.owner?S.settings.owner+'，':'')}這是今天秘書幫你整理的重點</div></div>
+    <div class="row"><button class="btn" data-act="addTask">＋ 行程/待辦</button><button class="btn p" data-act="addClient">＋ 客戶</button></div></div>
+  <div class="kpi">
+    <div class="card" data-act="nav" data-v="schedule"><div class="n">${b.todayTasks.length}</div><div class="l">今日行程待辦</div></div>
+    <div class="card" data-act="nav" data-v="schedule"><div class="n" style="color:var(--bad)">${b.overdue.length}</div><div class="l">逾期未完成</div></div>
+    <div class="card" data-act="filterClients" data-f="stale"><div class="n" style="color:var(--warn)">${b.stale.length}</div><div class="l">太久沒聯絡</div></div>
+    <div class="card" data-act="filterClients" data-f="recruit"><div class="n" style="color:var(--recruit)">${b.recruit.length}</div><div class="l">增員待追蹤</div></div>
+  </div>
+  ${syncBanner()}
+  <div class="grid2">
+   <div>
+    ${sec('今日行程與待辦',b.todayTasks.map(taskRow),'今天沒有安排，可以主動約訪一位太久沒聯絡的客戶')}
+    ${sec('逾期未完成',b.overdue.map(taskRow),'沒有逾期事項','bad')}
+    ${sec('未來 7 天',b.upcoming.map(taskRow),'未來一週還沒有安排')}
+    ${statsCard()}
+   </div>
+   <div>
+    ${topicCard()}
+    ${sec(`近期生日（${S.settings.birthdayDays} 天內）`,b.bdays.map(x=>`<div class="item" data-act="openClient" data-id="${x.client.id}"><div class="main"><div class="t">${esc(x.client.name)}${x.rel!=='本人'?`<span class="muted small">（${esc(x.rel)} ${esc(x.who)}）`:''}</div><div class="d">${fmtDate(x.date)} 生日${x.rel==='本人'&&ageOf(x.date)!==null?`，滿 ${ageOf(x.date)+(x.days===0?0:1)} 歲`:''}</div></div><div class="r">${x.days===0?'<span class="badge bad">今天</span>':`${x.days} 天後`}<br><a class="small" data-act="ext" target="_blank" rel="noopener" href="https://line.me/R/share?text=${encodeURIComponent(`${x.who} 生日快樂！祝你新的一歲平安健康、心想事成 🎂`)}">LINE 祝福</a></div></div>`),'近期沒有生日','warn')}
+    ${sec(`保單繳費與週年（${S.settings.anniversaryDays} 天內）`,b.anniv.map(x=>`<div class="item" data-act="openClient" data-id="${x.client.id}"><div class="main"><div class="t">${esc(x.client.name)} <span class="badge ${x.kind==='繳費'?'warn':'gray'}">${x.kind==='繳費'?'下次繳費':'保單週年'}</span></div><div class="d">${esc([x.policy.company,x.policy.product].filter(Boolean).join(' '))}${x.policy.premium?`・${esc(x.policy.payMode||'')} ${money(x.policy.premium)}`:''}${x.policy.insured&&x.policy.insured!==x.client.name?`・被保人 ${esc(x.policy.insured)}`:''}</div></div><div class="r">${x.days===0?'<span class="badge bad">今天</span>':`${x.days} 天後`}</div></div>`),'近期沒有保單繳費或週年')}
+    ${sec(`增員待追蹤（超過 ${S.settings.recruitDays} 天沒聯絡）`,b.recruit.slice(0,8).map(x=>clientRow(x.client)),'增員對象都有持續聯絡','recruit')}
+    ${sec(`太久沒聯絡（超過 ${S.settings.staleDays} 天）`,b.stale.slice(0,8).map(x=>clientRow(x.client)),'所有客戶都在聯絡節奏內','warn')}
+   </div>
+  </div>`;
+}
+
+function filteredClients(){
+  const q=ui.q.trim().toLowerCase();let arr=live('clients');
+  if(q)arr=arr.filter(c=>[c.name,c.phone,c.idNo,c.line,c.company,c.job,c.address,c.notes,(c.tags||[]).join(' '),(c.traits||[]).join(' '),c.referrer,...(c.family||[]).map(f=>f.name)].join(' ').toLowerCase().includes(q));
+  if(ui.filter==='sales')arr=arr.filter(c=>!['成交','保全服務','暫停','名單'].includes(c.salesStage));
+  if(ui.filter==='recruit')arr=arr.filter(c=>c.recruitActive&&!['已報到','暫停'].includes(c.recruitStage));
+  if(ui.filter==='stale'){const st=S.settings.staleDays;arr=arr.filter(c=>{const d=daysSince(lastContact(c.id));return d===null||d>=st})}
+  if(ui.filter==='customer')arr=arr.filter(c=>['成交','保全服務'].includes(c.salesStage));
+  if(ui.sales)arr=arr.filter(c=>c.salesStage===ui.sales);
+  if(ui.recruit)arr=arr.filter(c=>c.recruitActive&&c.recruitStage===ui.recruit);
+  if(ui.sort==='last')return arr.sort((a,b)=>(lastContact(a.id)||'').localeCompare(lastContact(b.id)||'')||a.name.localeCompare(b.name,'zh-Hant'));
+  if(ui.sort==='created')return arr.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  return arr.sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
+}
+function viewClients(){
+  const arr=filteredClients();
+  const chips=[['all','全部'],['sales','銷售進行中'],['recruit','增員進行中'],['customer','已成交'],['stale','太久沒聯絡']].map(([k,l])=>`<button class="chip ${ui.filter===k?'on':''}" data-act="filterClients" data-f="${k}">${l}</button>`).join('');
+  const list=`<div class="pane-list">
+    <div class="row sb" style="margin-bottom:10px"><h1>客戶 <span class="muted small">${arr.length} / ${live('clients').length}</span></h1><div class="row"><button class="btn ${ui.select?'p':''}" data-act="toggleSelect">${ui.select?'完成勾選':'勾選'}</button><button class="btn p" data-act="addClient">＋ 新增客戶</button></div></div>
+    ${ui.select?`<div class="banner" style="background:#e6eefc;color:var(--sale);border-color:#b9cdf5"><b>已勾選 ${ui.selected.size} 位</b><button class="btn s" data-act="selAll">全選目前篩選結果（${arr.length}）</button><button class="btn s" data-act="selNone">清除</button><button class="btn s p" data-act="addSelToList" ${ui.selected.size?'':'disabled'}>加入電訪名單</button></div>`:''}
+    <input id="searchBox" type="search" placeholder="搜尋姓名、電話、公司、備註…" value="${esc(ui.q)}" data-act="search" style="margin-bottom:10px">
+    <div class="chips" style="margin-bottom:10px">${chips}</div>
+    <div class="row" style="margin-bottom:10px"><select data-act="salesFilter" style="width:auto"><option value="">所有銷售階段</option>${SALES_STAGES.map(s=>`<option ${ui.sales===s?'selected':''}>${s}</option>`).join('')}</select>
+    <select data-act="recruitFilter" style="width:auto"><option value="">所有增員階段</option>${RECRUIT_STAGES.map(s=>`<option ${ui.recruit===s?'selected':''}>${s}</option>`).join('')}</select>
+    <select data-act="sortClients" style="width:auto"><option value="name" ${ui.sort==='name'?'selected':''}>姓名排序</option><option value="last" ${ui.sort==='last'?'selected':''}>最久沒聯絡優先</option><option value="created" ${ui.sort==='created'?'selected':''}>最近建檔優先</option></select></div>
+    <div class="card list">${arr.length?arr.map(c=>clientRow(c)).join(''):'<div class="empty">沒有符合的客戶</div>'}</div></div>`;
+  const detail=ui.clientId&&C(ui.clientId)&&!C(ui.clientId).deleted?clientDetail(C(ui.clientId)):`<div class="card empty" style="padding:60px 20px">從左側選一位客戶，或新增客戶</div>`;
+  return `<div class="two ${ui.clientId?'detail':''}">${list}<div class="pane-detail">${detail}</div></div>`;
+}
+function clientDetail(c){
+  const logs=clientLogs(c.id),tasks=clientTasks(c.id),lc=lastContact(c.id),pols=clientPolicies(c.id);
+  const tabs=[['logs',`接觸紀錄 ${logs.length}`],['tasks',`待辦 ${tasks.filter(t=>!t.done).length}`],['policies',`保單 ${pols.length}`],['info','詳細資料']].map(([k,l])=>`<button class="chip ${ui.tab===k?'on':''}" data-act="tab" data-t="${k}">${l}</button>`).join('');
+  let tabBody='';
+  if(ui.tab==='logs'){
+    tabBody=logs.length?logs.map(l=>`<div class="log ${l.type==='實地調查'?'survey':''}">
+      <div class="h"><span>${fmtDate(l.date,true)} ・ <b>${esc(l.type)}</b></span><span><a href="#" data-act="editLog" data-id="${l.id}">編輯</a></span></div>
+      ${l.content?`<p>${esc(l.content)}</p>`:''}
+      ${l.observations?`<div class="ob">🔍 觀察：${esc(l.observations)}</div>`:''}
+      ${l.nextStep?`<p class="small"><b>下一步：</b>${esc(l.nextStep)}${l.nextDate?`（${fmtDate(l.nextDate)}）`:''}</p>`:''}
+    </div>`).join(''):'<div class="empty">還沒有接觸紀錄，按「新增紀錄」記下這次談了什麼、觀察到什麼</div>';
+  }else if(ui.tab==='tasks'){
+    const open=tasks.filter(t=>!t.done),done=tasks.filter(t=>t.done);
+    tabBody=(open.length?open.map(taskRow).join(''):'<div class="empty">沒有待辦</div>')+(done.length?`<details style="margin-top:8px"><summary class="muted small">已完成 ${done.length}</summary>${done.map(taskRow).join('')}</details>`:'');
+  }else if(ui.tab==='policies'){
+    tabBody=pols.length?pols.map(p=>{const nx=policyNext(p);const rd=p.riders||[];const tot=(+p.premium||0)+rd.reduce((a,r)=>a+(+r.premium||0),0);return `<div class="log">
+      <div class="h"><span><b>${esc([p.company,p.product].filter(Boolean).join(' ')||'（未填商品）')}</b> ${p.type?`<span class="badge gray">${esc(p.type)}</span>`:''} <span class="badge ${p.status==='有效'||!p.status?'ok':'gray'}">${esc(p.status||'有效')}</span></span><span><a href="#" data-act="editPolicy" data-id="${p.id}">編輯</a></span></div>
+      <div class="kv small" style="margin-top:4px">
+        ${p.policyNo?`<div class="k">保單號碼</div><div>${esc(p.policyNo)}</div>`:''}
+        <div class="k">要保人</div><div>${esc(p.holder||'-')}</div><div class="k">被保險人</div><div>${esc(p.insured||'-')}</div>
+        ${p.date?`<div class="k">投保日</div><div>${esc(p.date)}${heldText(p.date)?` <span class="muted">（已持有 ${heldText(p.date)}）</span>`:''}</div>`:''}
+        ${p.channel||p.agentName?`<div class="k">購買管道</div><div>${esc(p.channel||'')}${p.agentName?` ・ ${esc(p.agentName)}`:''}${p.agentRelation?` <span class="muted">（${esc(p.agentRelation)}）</span>`:''}</div>`:''}
+        ${(p.purposes||[]).length||p.purposeNote?`<div class="k">購買目的</div><div>${(p.purposes||[]).map(x=>`<span class="badge gray">${esc(x)}</span>`).join(' ')}${p.purposeNote?`<div class="small">${esc(p.purposeNote)}</div>`:''}</div>`:''}
+        <div class="k">主約繳費</div><div>${esc(p.payMode||'')}${p.premium?` ${money(p.premium)} 元`:''}${p.years?`・${esc(p.years)} 年期`:''}</div>
+        ${p.amount?`<div class="k">主約保額</div><div>${money(p.amount)}</div>`:''}
+        ${rd.length?`<div class="k">附約 ${rd.length}</div><div>${rd.map(r=>`${esc(r.name)}${r.amount?` <span class="muted">${esc(r.amount)}</span>`:''}${r.premium?`・${money(r.premium)} 元`:''}${r.note?` <span class="muted small">（${esc(r.note)}）</span>`:''}`).join('<br>')}</div><div class="k">保費合計</div><div><b>${money(tot)} 元</b> / ${esc(p.payMode||'期')}</div>`:''}
+        ${nx&&(p.status==='有效'||!p.status)?`<div class="k">${nx.kind==='繳費'?'下次繳費':'保單週年'}</div><div>${nx.days===0?'今天':`${nx.days} 天後`}</div>`:''}
+        ${p.note?`<div class="k">備註</div><div>${esc(p.note)}</div>`:''}
+      </div></div>`}).join(''):'<div class="empty">還沒有保單紀錄，按「＋ 保單」新增現有保單</div>';
+  }else{
+    const fam=(c.family||[]).map((f,i)=>{const linked=f.clientId&&C(f.clientId)&&!C(f.clientId).deleted;return `<div class="row sb" style="padding:4px 0;border-top:1px solid var(--line)"><div>${esc(f.relation)} ${esc(f.name)}${f.birthday?` ・ ${fmtDate(f.birthday)}${ageOf(f.birthday)!==null?`（${ageOf(f.birthday)} 歲）`:''}`:''}${f.note?` ・ ${esc(f.note)}`:''}</div>${linked?`<a href="#" class="small" data-act="openClient" data-id="${f.clientId}">開啟客戶 ›</a>`:`<button class="btn s" data-act="famToClient" data-id="${c.id}" data-i="${i}">轉為客戶</button>`}</div>`}).join('')||'<span class="muted">未填</span>';
+    tabBody=`<div class="kv">
+      <div class="k">電話</div><div>${c.phone?`<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:'-'}</div>
+      <div class="k">LINE</div><div>${esc(c.line||'-')}</div>
+      <div class="k">Email</div><div>${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:'-'}</div>
+      <div class="k">地址</div><div>${c.address?`<a href="https://www.google.com/maps/search/${encodeURIComponent(c.address)}" target="_blank" rel="noopener">${esc(c.address)}</a>`:'-'}</div>
+      <div class="k">生日</div><div>${c.birthday?`${esc(c.birthday)}${ageOf(c.birthday)!==null?`（${ageOf(c.birthday)} 歲）`:''}`:'-'}</div>
+      <div class="k">身分證</div><div>${c.idNo?(ui.showId===c.id?`${esc(c.idNo)} <a href="#" class="small" data-act="hideId">隱藏</a>`:`${esc(maskId(c.idNo))} <a href="#" class="small" data-act="revealId" data-id="${c.id}">顯示</a>`):'-'}</div>
+      <div class="k">性別</div><div>${esc(c.gender||'-')}</div>
+      <div class="k">職業</div><div>${esc([c.company,c.job].filter(Boolean).join(' ')||'-')}</div>
+      <div class="k">來源</div><div>${esc(c.source||'-')}${c.referrer?`（${esc(c.referrer)} 介紹）`:''}</div>
+      <div class="k">標籤</div><div>${(c.tags||[]).map(t=>`<span class="badge gray">${esc(t)}</span> `).join('')||'-'}</div>
+      <div class="k">建檔</div><div>${new Date(c.createdAt).toLocaleDateString('zh-TW')}</div>
+    </div>
+    <div class="sec"><h3>家庭成員</h3>${fam}</div>
+    <div class="sec"><h3>備註</h3><div style="white-space:pre-wrap">${esc(c.notes||'')||'<span class="muted">無</span>'}</div></div>`;
+  }
+  return `<div class="card">
+    <div class="row sb"><div class="row"><button class="btn s back" data-act="closeClient">‹ 返回</button><h2 style="margin:0">${esc(c.name)}</h2></div>
+      <div class="row"><button class="btn s" data-act="editClient" data-id="${c.id}">編輯</button><button class="btn s d" data-act="delClient" data-id="${c.id}">刪除</button></div></div>
+    <div class="muted small" style="margin:4px 0 10px">${esc([c.company,c.job].filter(Boolean).join(' '))}${c.phone?` ・ <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`:''}${lc?` ・ 上次聯絡 ${fmtDate(lc)}（${ago(daysSince(lc))}）`:' ・ 尚未聯絡'}</div>
+    <div class="grid2" style="gap:10px;margin-bottom:12px">
+      <div class="card" style="margin:0;padding:10px 12px;border-left:4px solid var(--sale)"><div class="small muted">銷售進度</div>
+        <select data-act="setSales" data-id="${c.id}">${SALES_STAGES.map(s=>`<option ${c.salesStage===s?'selected':''}>${s}</option>`).join('')}</select>
+        ${c.salesNote?`<div class="small" style="margin-top:4px">${esc(c.salesNote)}</div>`:''}</div>
+      <div class="card" style="margin:0;padding:10px 12px;border-left:4px solid var(--recruit)"><div class="row sb"><div class="small muted">增員進度</div><label class="chk small" style="margin:0"><input type="checkbox" data-act="setRecruitActive" data-id="${c.id}" ${c.recruitActive?'checked':''}>列為增員對象</label></div>
+        ${c.recruitActive?`<select data-act="setRecruit" data-id="${c.id}">${RECRUIT_STAGES.map(s=>`<option ${c.recruitStage===s?'selected':''}>${s}</option>`).join('')}</select>${c.recruitNote?`<div class="small" style="margin-top:4px">${esc(c.recruitNote)}</div>`:''}`:'<div class="muted small" style="padding:6px 0">尚未列為增員對象</div>'}</div>
+    </div>
+    <div class="card" style="margin:0 0 12px;padding:10px 12px"><div class="row sb"><div class="small muted">客戶特徵（實地觀察：家庭、居住、經濟、興趣、健康、態度）</div><button class="btn s" data-act="editTraits" data-id="${c.id}">編輯特徵</button></div>${traitsHtml(c.traits)}</div>
+    <div class="row sb" style="margin-bottom:8px"><div class="chips">${tabs}</div>
+      <div class="row"><button class="btn s" data-act="addPolicy" data-id="${c.id}">＋ 保單</button><button class="btn s" data-act="addTask" data-id="${c.id}">＋ 待辦</button><button class="btn s p" data-act="addLog" data-id="${c.id}">＋ 新增紀錄</button></div></div>
+    ${tabBody}
+  </div>`;
+}
+
+function viewSchedule(){
+  const t=today();let tasks=live('tasks');
+  if(!ui.showDone)tasks=tasks.filter(x=>!x.done);
+  tasks.sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
+  const groups={};for(const x of tasks){(groups[x.date]=groups[x.date]||[]).push(x)}
+  const dates=Object.keys(groups).sort();
+  const html=dates.map(d=>{const cls=d<t?'over':d===t?'today':'';const label=d<t?`逾期 ・ ${fmtDate(d,true)}`:d===t?`今天 ・ ${fmtDate(d,true)}`:`${fmtDate(d,true)}${daysBetween(t,d)<=7?`（${daysBetween(t,d)} 天後）`:''}`;
+    return `<div class="daygroup ${cls}"><h4>${label}</h4><div class="card" style="padding:4px 14px">${groups[d].map(taskRow).join('')}</div></div>`}).join('');
+  return `<div class="row sb" style="margin-bottom:6px"><h1>行程與待辦</h1><div class="row"><label class="chk small" style="margin:0"><input type="checkbox" data-act="toggleShowDone" ${ui.showDone?'checked':''}>顯示已完成</label><button class="btn" data-act="exportIcs" title="匯出成行事曆檔，可匯入 Google 日曆">📅 匯出行事曆</button><button class="btn p" data-act="addTask">＋ 新增</button></div></div>
+  <p class="small muted" style="margin:0 0 6px">每筆旁的 📅 可直接加到 Google 日曆；「匯出行事曆」會產生 .ics 檔，含所有未完成事項與客戶生日。</p>
+  ${dates.length?html:'<div class="card empty">目前沒有行程或待辦</div>'}`;
+}
+
+function syncCard(){
+  if(MODE==='google'){const a=GACCT||{};return `<div class="card"><h3>同步</h3>
+    <div class="row" style="margin-bottom:8px">${a.picture?`<img src="${esc(a.picture)}" alt="" referrerpolicy="no-referrer" style="width:36px;height:36px;border-radius:50%">`:''}<div><b>${esc(a.name||'')}</b><div class="small muted">${esc(a.email||'')}</div></div></div>
+    <p class="small">資料會自動存到這個 Google 帳號雲端硬碟的應用程式專屬區，手機與電腦開啟時自動同步，兩邊各自修改後以每筆資料最後修改時間為準合併。</p>
+    <p class="small"><b>這台裝置上次同步：</b>${lastSyncText()} <span id="syncStatus" class="muted"></span></p>
+    <div class="row"><button class="btn p" data-act="cloudSyncNow">立即同步</button><button class="btn" data-act="gSignOut">登出</button></div>
+    <details style="margin-top:12px"><summary class="small muted" style="cursor:pointer">備份檔（進階）</summary>
+      <p class="small muted" style="margin:8px 0">除了雲端自動同步，也可以另外匯出一份用密碼加密的備份檔自行保存；匯入時會與現有資料合併。</p>
+      <div class="row"><button class="btn s" data-act="exportShare">分享 / 存備份檔</button><button class="btn s" data-act="exportDownload">下載備份檔</button><button class="btn s" data-act="import">匯入備份檔</button></div></details>
+   </div>`}
+  return `   <div class="card"><h3>同步</h3>
+    <p class="small muted">所有資料先存在這台裝置。同步檔是用你的密碼加密過的，放在雲端硬碟也沒人看得懂。兩台裝置各自修改後合併時，以每筆資料最後修改時間為準。</p>
+    <p class="small"><b>這台裝置上次同步 / 匯出：</b>${lastSyncText()}</p>
+    <h4 style="margin:12px 0 6px">電腦：自動同步（Chrome / Edge）</h4>
+    ${FS_OK?`<div class="row" style="margin-bottom:8px">${FH?`<span class="badge ok">已連結：${esc(FH.name)}</span><span id="syncStatus" class="small muted"></span>`:'<span class="badge gray">尚未連結同步檔</span>'}</div>
+      <div class="row">${FH?`<button class="btn" data-act="syncNow">立即同步</button><button class="btn" data-act="unlinkFile">解除連結</button>`:`<button class="btn p" data-act="linkNew">在雲端硬碟資料夾建立同步檔</button><button class="btn" data-act="linkExisting">連結已有的同步檔</button>`}</div>
+      <p class="small muted" style="margin-top:8px">建立時請選到「我的雲端硬碟」裡的資料夾。之後每次修改會自動寫入，Google 雲端硬碟桌面版會幫你上傳。</p>`
+      :'<p class="small muted">這個瀏覽器不支援自動連結檔案。電腦上請用 Chrome 或 Edge 開啟，或改用下面的匯出匯入。</p>'}
+    <h4 style="margin:14px 0 6px">手機：匯出 / 匯入</h4>
+    <div class="row"><button class="btn p" data-act="exportShare">分享 / 存到雲端硬碟</button><button class="btn" data-act="exportDownload">下載同步檔</button><button class="btn" data-act="import">匯入同步檔</button></div>
+    <p class="small muted" style="margin-top:8px">在手機上：改完資料按「分享 / 存到雲端硬碟」覆蓋原檔；要讀取電腦上的更新，按「匯入同步檔」從雲端硬碟選同一個檔案。</p>
+   </div>${googleAvailable()?`<div class="card" style="border-color:var(--brand)"><h3>改用 Google 帳號登入</h3><p class="small muted">登入後資料自動存到你自己的 Google 雲端硬碟，手機與電腦自動同步，不必再匯出匯入。現有資料會一併帶過去。</p><div class="row"><button class="btn p" data-act="switchToGoogle">用 Google 帳號登入</button></div></div>`:''}`;
+}
+function securityCard(){
+  if(MODE==='google'){const has=!!localStorage.getItem('ss.pinHash');return `<div class="card"><h3>鎖定與安全</h3>
+    <p class="small muted">登入靠 Google 帳號保護，建議帳號開啟兩步驟驗證。若手機常借人或怕遺失，可以再設一組 PIN，每次開啟程式都要輸入。</p>
+    <div class="row">${has?`<span class="badge ok">已設定 PIN</span><button class="btn" data-act="setPin">更改 PIN</button><button class="btn" data-act="removePin">移除 PIN</button>`:`<button class="btn" data-act="setPin">設定開啟 PIN</button>`}</div>
+   </div>`}
+  const remembered=!!localStorage.getItem('ss.pass');
+  return `   <div class="card"><h3>密碼與安全</h3>
+    <div class="row" style="margin-bottom:8px"><button class="btn" data-act="changePass">更改密碼</button>
+      <label class="chk small" style="margin:0"><input type="checkbox" data-act="toggleRemember" ${remembered?'checked':''}>在這台裝置記住密碼（開啟不必輸入）</label></div>
+    <p class="small muted">記住密碼比較方便，但手機若遺失，撿到的人只要解鎖手機就能看到客戶資料。建議手機不要記住，電腦可以。</p>
+   </div>`;
+}
+function viewSettings(){
+  const st=S.settings,n=live('clients').length,nl=live('logs').length,nt=live('tasks').length,np=live('policies').length;
+  return `<h1>設定</h1>
+  <div class="grid2">
+  <div>
+   ${syncCard()}
+   ${securityCard()}
+  </div>
+  <div>
+   <div class="card"><h3>提醒規則</h3>
+    <form data-act="saveRules" class="fgrid">
+      <label class="f"><span class="l">你的稱呼（顯示在首頁）</span><input type="text" name="owner" value="${esc(st.owner||'')}" placeholder="例如：王主任"></label>
+      <label class="f"><span class="l">幾天沒聯絡算「太久」</span><input type="number" name="staleDays" min="1" value="${st.staleDays}"></label>
+      <label class="f"><span class="l">生日提前幾天提醒</span><input type="number" name="birthdayDays" min="0" value="${st.birthdayDays}"></label>
+      <label class="f"><span class="l">保單週年提前幾天提醒</span><input type="number" name="anniversaryDays" min="0" value="${st.anniversaryDays}"></label>
+      <label class="f"><span class="l">增員對象幾天沒聯絡要追蹤</span><input type="number" name="recruitDays" min="1" value="${st.recruitDays}"></label>
+      <div class="w"><button class="btn p">儲存規則</button></div>
+    </form>
+   </div>
+   <div class="card"><h3>今日話題自動帶入</h3>
+    <p class="small muted">讓 Codex 或其他工具每天早上把產出寫到固定的檔案或網址，程式開啟時自動讀進首頁，不必再手動貼。讀到的內容會存進同步檔，手機同步後也看得到。檔案第一行建議寫當天日期（例如 2026-11-03），程式會用它判斷是哪一天的話題。</p>
+    <h4 style="margin:10px 0 6px">電腦：讀取雲端硬碟資料夾裡的檔案（Chrome / Edge）</h4>
+    ${FS_OK?`<div class="row">${TH?`<span class="badge ok">已連結：${esc(TH.name)}</span><button class="btn s" data-act="refreshTopic">立即讀取</button><button class="btn s" data-act="unlinkTopicFile">解除</button>`:`<button class="btn p" data-act="linkTopicFile">連結話題檔（例如 今日話題.md）</button>`}</div>`:'<p class="small muted">這個瀏覽器不支援，請用 Chrome 或 Edge，或改用下面的網址方式。</p>'}
+    <h4 style="margin:12px 0 6px">任何裝置：從網址讀取</h4>
+    <input type="text" data-act="topicUrlText" value="${esc(S.settings.topicUrl||'')}" placeholder="純文字或 JSON 的網址，例如 Google 試算表「檔案 → 共用 → 發布到網路」產生的連結">
+    <p class="small muted" style="margin-top:6px">網址內容會公開給知道連結的人，請只放話題，不要放客戶資料。</p>
+   </div>
+   <div class="card"><h3>今日話題提示詞</h3>
+    <p class="small muted">首頁「今日話題」按鈕送出的指令。程式會自動在前面加上今天日期、在後面加上當天要見的客戶與特徵，這裡只放主體。</p>
+    <textarea data-act="topicPromptText" style="min-height:160px;font-size:13px">${esc(S.settings.topicPrompt||DEFAULT_TOPIC_PROMPT)}</textarea>
+    <div class="row" style="margin-top:6px"><button class="btn s" data-act="resetTopicPrompt">還原成預設（Codex 版）</button><button class="btn s" data-act="copyPrompt">複製完整提示詞</button></div>
+   </div>
+   <div class="card"><h3>資料</h3>
+    <div class="kv"><div class="k">客戶</div><div>${n} 位</div><div class="k">接觸紀錄</div><div>${nl} 筆</div><div class="k">行程待辦</div><div>${nt} 筆</div><div class="k">保單</div><div>${np} 張</div></div>
+    <div class="row" style="margin-top:10px"><button class="btn p" data-act="importCsv">從 CSV 匯入客戶名單</button><span class="small muted">Excel 名單請先「另存新檔 → CSV UTF-8」，第一列為欄位名稱（至少要有「姓名」）。</span></div>
+    <div class="row" style="margin-top:10px"><button class="btn" data-act="exportCsv">匯出客戶名單 CSV</button><button class="btn" data-act="exportLogsCsv">匯出接觸紀錄 CSV</button><button class="btn" data-act="exportPoliciesCsv">匯出保單 CSV</button><button class="btn" data-act="exportIcs">匯出行事曆 .ics</button></div>
+    <p class="small muted" style="margin-top:6px">CSV 可用 Excel 開啟，是未加密的明文；.ics 匯入 Google 日曆後，事項會存在 Google 的伺服器上，請自行衡量。</p>
+    <div class="row" style="margin-top:10px"><button class="btn d" data-act="wipe">清除這台裝置的資料</button></div>
+   </div>
+   <div class="card help"><h3>使用說明</h3>
+    <p><b>每天開啟</b>先看「今日」：行程、逾期、生日、太久沒聯絡、增員追蹤都在這裡。</p>
+    <p><b>每次見完客戶</b>到客戶頁按「新增紀錄」，寫下談了什麼、下一步和日期。實地觀察到的家庭、居住、興趣、態度直接用勾選的，會累積成「客戶特徵」，也能用搜尋找出有同樣特徵的客戶（例如搜「有小孩」做教育金名單）。</p>
+    <p><b>銷售和增員是兩條線</b>，同一個人可以同時在「建議書」和「邀約說明會」，互不影響。</p>
+    <p><b>電訪名單</b>：到「名單」建立專案，再到「客戶」按「勾選」批次加入，逐一記錄撥打結果。</p>
+    <p><b>行事曆</b>：行程旁的 📅 可加到 Google 日曆；「匯出行事曆」可一次匯入所有事項與生日。</p>
+    <p><b>同步</b>：${MODE==='google'?'用 Google 帳號登入後全自動，每次開啟與修改後都會和雲端硬碟同步。':'電腦連結雲端硬碟裡的同步檔後全自動；手機改完記得「分享 / 存到雲端硬碟」。'}</p>
+    <p class="small muted">版本 ${APP_VERSION} ・ 資料不經任何其他伺服器</p>
+   </div>
+  </div></div>`;
+}
+
+/* ========= 客戶特徵 ========= */
+function traitsChips(traits){
+  const set=new Set(traits||[]);const known=new Set(PROFILE_CATS.flatMap(c=>c[2]));const custom=(traits||[]).filter(t=>!known.has(t));
+  return PROFILE_CATS.map(([k,label,opts])=>`<div style="margin:6px 0"><div class="small muted" style="margin-bottom:3px">${label}</div><div class="chips sm">${opts.map(o=>`<label class="chip"><input type="checkbox" name="traits[]" value="${esc(o)}" ${set.has(o)?'checked':''}>${esc(o)}</label>`).join('')}</div></div>`).join('')
+    +`<label class="f" style="margin-top:8px"><span class="l">其他特徵（用逗號分隔，例如：養兩隻柴犬, 小孩學鋼琴）</span><input type="text" name="traits_custom" value="${esc(custom.join(', '))}"></label>`;
+}
+function traitsFromForm(o){return [...new Set([...(o['traits[]']||[]),...String(o.traits_custom||'').split(/[,，、]/).map(x=>x.trim()).filter(Boolean)])]}
+function traitsHtml(traits){if(!traits||!traits.length)return '<div class="muted small" style="margin-top:4px">尚未記錄。按「編輯特徵」，或在寫接觸紀錄時直接勾選。</div>';return `<div class="chips sm" style="margin-top:6px">${traits.map(t=>`<span class="chip on" style="cursor:default">${esc(t)}</span>`).join('')}</div>`}
+function traitsForm(cid){const c=C(cid);modal(`${esc(c.name)} 的客戶特徵`,traitsChips(c.traits),o=>{c.traits=traitsFromForm(o);put('clients',c);closeModal();render();toast('已更新客戶特徵')})}
+
+/* ========= 今日話題 ========= */
+function topicPrompt(){
+  const t=today();const d=new Date();
+  const cl=live('tasks').filter(x=>x.date===t&&!x.done&&x.clientId).map(x=>C(x.clientId)).filter(c=>c&&!c.deleted);
+  const traits=[...new Set(cl.flatMap(c=>c.traits||[]))].slice(0,15);
+  const base=(S.settings.topicPrompt||DEFAULT_TOPIC_PROMPT).trim();
+  let ctx='';
+  if(cl.length)ctx+=`\n\n補充：今天（${t}）我預定要見的客戶：${cl.map(c=>`${c.name}（${[c.job,c.salesStage?'銷售階段 '+c.salesStage:'',...(c.traits||[]).slice(0,5)].filter(Boolean).join('、')||'無特徵資料'}）`).join('；')}。請在「適合客群」與需求挖掘對話中盡量貼近他們。`;
+  else if(traits.length)ctx+=`\n\n補充：我的客戶常見特徵：${traits.join('、')}。`;
+  return `現在是台灣時間 ${t}（${WD[d.getDay()]}）${pad(d.getHours())}:${pad(d.getMinutes())}。請先上網查核最新資訊再回答。\n\n${base}${ctx}`;
+}
+async function linkTopicFile(){
+  if(!FS_OK){alert('這個瀏覽器不支援直接連結檔案，請用 Chrome 或 Edge，或改用「從網址讀取」。');return}
+  try{const [h]=await showOpenFilePicker({types:[{description:'今日話題檔',accept:{'text/plain':['.txt','.md'],'application/json':['.json']}}],multiple:false});TH=h;await kvSet('topicHandle',TH);await refreshTopic(true);render();toast('已連結話題檔，之後開啟程式會自動讀取')}
+  catch(e){if(e.name!=='AbortError')alert('連結失敗：'+e.message)}
+}
+async function unlinkTopicFile(){TH=null;topicPermOK=false;await kvDel('topicHandle');render();toast('已解除話題檔連結')}
+function detectDate(t){const m=(t||'').slice(0,400).match(/(20\d{2})\s?[\/\-.年]\s?(\d{1,2})\s?[\/\-.月]\s?(\d{1,2})/);return m?`${m[1]}-${pad(+m[2])}-${pad(+m[3])}`:null}
+function parseTopicText(raw){
+  let text=String(raw||'').replace(/^﻿/,'').trim();
+  try{const j=JSON.parse(text);
+    if(typeof j==='string')text=j;
+    else if(j&&typeof j==='object'){
+      const ks=Object.keys(j).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+      if(ks.length)return {date:ks[ks.length-1],text:String(j[ks[ks.length-1]])};
+      const body=j.text||j.content||j.topic||j.markdown||j.result;
+      if(body)return {date:j.date?String(j.date).slice(0,10):detectDate(String(body)),text:String(body)};
+    }
+  }catch{}
+  return {date:detectDate(text),text};
+}
+function storeTopic(date,text,src){
+  if(!text)return false;const tp=Object.assign({},S.settings.topics||{});const d=date||today();
+  if(tp[d]===text)return false;tp[d]=text;for(const k of Object.keys(tp))if(daysBetween(k,today())>60)delete tp[k];
+  setSettings({topics:tp,topicLastSrc:src,topicLastAt:Date.now()});return true;
+}
+async function refreshTopic(force){
+  if(!S)return;if(!force&&Date.now()-topicLastRead<10*60*1000)return;topicLastRead=Date.now();let changed=false;
+  if(TH){try{let pm=await TH.queryPermission({mode:'read'});if(pm!=='granted'&&force)pm=await TH.requestPermission({mode:'read'});topicPermOK=pm==='granted';
+    if(topicPermOK){const f=await TH.getFile();const {date,text}=parseTopicText(await f.text());if(storeTopic(date||iso(new Date(f.lastModified)),text,'檔案 '+f.name))changed=true}
+    else if(force)toast('沒有取得讀取話題檔的權限')}catch(e){console.warn(e);if(force)toast('讀取話題檔失敗：'+e.message)}}
+  const url=(S.settings.topicUrl||'').trim();
+  if(url){try{const r=await fetch(url,{cache:'no-store'});if(r.ok){const {date,text}=parseTopicText(await r.text());if(storeTopic(date,text,'網址'))changed=true}else if(force)toast('話題網址讀取失敗：HTTP '+r.status)}
+    catch(e){if(force)toast('話題網址無法讀取（可能沒有網路，或該網址不允許跨站讀取）')}}
+  if(changed){render();toast('今日話題已更新')}else if(force&&(TH||url)){render();toast('話題沒有變化')}
+}
+function topicCard(){
+  const t=today(),tp=S.settings.topics||{};let txt=tp[t]||'',label='';
+  if(!txt){const ks=Object.keys(tp).filter(k=>tp[k]).sort();if(ks.length){txt=tp[ks[ks.length-1]];label=`<span class="badge warn">顯示 ${fmtDate(ks[ks.length-1])} 的話題，今天的還沒產生</span>`}}
+  const q=encodeURIComponent(topicPrompt());const auto=!!(TH||(S.settings.topicUrl||'').trim());
+  const src=auto?`<div class="small muted" style="margin-bottom:6px">自動來源：${TH?`檔案「${esc(TH.name)}」`:''}${TH&&S.settings.topicUrl?' 與 ':''}${S.settings.topicUrl?'網址':''}${S.settings.topicLastAt?` ・ 上次讀入 ${new Date(S.settings.topicLastAt).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:''} <button class="btn s ghost" data-act="refreshTopic">重新讀取</button>${TH&&!topicPermOK?`<button class="btn s p" data-act="refreshTopic">允許讀取話題檔</button>`:''}</div>`:'';
+  return `<div class="card"><h3>今日話題 <span class="small muted" style="font-weight:400">${fmtDate(t,true)}</span></h3>
+  ${src}${label?`<div style="margin-bottom:6px">${label}</div>`:''}
+  ${txt?`<div style="white-space:pre-wrap;max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.6" id="topicView">${esc(txt)}</div>
+  <details style="margin-top:6px"><summary class="small muted" style="cursor:pointer">手動編輯 / 自己產生</summary>`:''}
+  <div class="row" style="margin:8px 0"><a class="btn s p" data-act="ext" target="_blank" rel="noopener" href="https://claude.ai/new?q=${q}">用 Claude 產生今日破冰時事</a><a class="btn s" data-act="ext" target="_blank" rel="noopener" href="https://chatgpt.com/?q=${q}">用 ChatGPT 產生</a><button class="btn s" data-act="copyPrompt">複製提示詞</button></div>
+  <textarea data-act="topicText" placeholder="${auto?'自動來源會讀進來；也可以在這裡手動貼上或修改。':'按上面的按鈕產生三則話題後貼回這裡（會跟著同步）；或到「設定 → 今日話題自動帶入」讓 Codex 每天自動寫進來。'}" style="min-height:64px">${esc(txt)}</textarea>
+  ${txt?'</details>':''}</div>`;
+}
+
+/* ========= 統計與同步狀態 ========= */
+function weekRange(){const t=new Date();t.setHours(0,0,0,0);const dow=(t.getDay()+6)%7;const m=new Date(t);m.setDate(t.getDate()-dow);const e=new Date(m);e.setDate(m.getDate()+6);return [iso(m),iso(e)]}
+function monthRange(){const t=new Date();return [iso(new Date(t.getFullYear(),t.getMonth(),1)),iso(new Date(t.getFullYear(),t.getMonth()+1,0))]}
+function rangeStats([from,to]){
+  const inR=d=>d&&d>=from&&d<=to,inT=ts=>ts&&inR(iso(new Date(ts)));
+  const logs=live('logs').filter(l=>inR(l.date)),cl=live('clients');
+  return {visits:logs.filter(l=>l.type==='拜訪'||l.type==='實地調查').length,calls:logs.filter(l=>l.type==='電話'||l.type==='LINE/訊息').length,dials:live('listItems').filter(i=>inR(i.calledAt)).length,newClients:cl.filter(c=>inT(c.createdAt)).length,closed:cl.filter(c=>inT(c.closedAt)).length,recruited:cl.filter(c=>inT(c.recruitedAt)).length};
+}
+function statsCard(){
+  const w=rangeStats(weekRange()),m=rangeStats(monthRange());
+  const row=(l,a,b)=>`<div>${l}</div><div><b>${a}</b></div><div><b>${b}</b></div>`;
+  return `<div class="card"><h3>活動統計 <span class="small muted" style="font-weight:400">本週（一到日）／本月</span></h3><div class="stat"><div class="h">項目</div><div class="h">本週</div><div class="h">本月</div>
+  ${row('拜訪 / 實地調查',w.visits,m.visits)}${row('電話 / 訊息紀錄',w.calls,m.calls)}${row('電訪名單撥打',w.dials,m.dials)}${row('新增客戶',w.newClients,m.newClients)}${row('成交',w.closed,m.closed)}${row('增員報到',w.recruited,m.recruited)}</div></div>`;
+}
+function lastSyncText(){const t=+localStorage.getItem('ss.lastSync')||0;return t?new Date(t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'尚未同步或匯出過'}
+function markSync(){try{localStorage.setItem('ss.lastSync',String(Date.now()))}catch{}}
+function syncBanner(){if(MODE==='google')return needAuth?`<div class="banner" id="authBanner">🔐 與 Google 的連線已過期，修改暫時只存在這台裝置。<button class="btn s p" data-act="gReauth">重新連線並同步</button></div>`:'';if(FH)return '';const t=+localStorage.getItem('ss.lastSync')||0;const days=t?Math.floor((Date.now()-t)/864e5):null;if(days!==null&&days<3)return '';
+  return `<div class="banner">💾 ${days===null?'這台裝置還沒有同步或匯出過備份':`已 ${days} 天沒有同步或匯出備份`}，建議現在備份。<button class="btn s" data-act="nav" data-v="settings">去設定同步</button></div>`}
+
+/* ========= 名單匯入 (CSV / Excel 另存 CSV) ========= */
+function parseCsv(text){const rows=[];let row=[],cur='',q=false;for(let i=0;i<text.length;i++){const ch=text[i];if(q){if(ch==='"'){if(text[i+1]==='"'){cur+='"';i++}else q=false}else cur+=ch}else{if(ch==='"')q=true;else if(ch===','){row.push(cur);cur=''}else if(ch==='\n'){row.push(cur);rows.push(row);row=[];cur=''}else if(ch!=='\r')cur+=ch}}if(cur||row.length){row.push(cur);rows.push(row)}return rows.filter(r=>r.some(v=>v.trim()))}
+function normDate(x){x=(x||'').trim();if(!x)return '';let m=x.match(/^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);if(m)return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;m=x.match(/^(\d{2,3})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);if(m)return `${+m[1]+1911}-${pad(+m[2])}-${pad(+m[3])}`;return ''}
+function importCsv(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.csv,text/csv';
+  inp.onchange=async()=>{const f=inp.files[0];if(!f)return;const buf=await f.arrayBuffer();let text=new TextDecoder('utf-8').decode(buf);if(text.includes('�')){try{text=new TextDecoder('big5').decode(buf)}catch{}}text=text.replace(/^﻿/,'');
+    const rows=parseCsv(text);if(rows.length<2){alert('檔案裡沒有資料列。第一列要是欄位名稱，第二列起是客戶。');return}
+    const head=rows[0].map(h=>h.trim().toLowerCase());const col={};for(const [k,names] of Object.entries(IMPORT_MAP)){const i=head.findIndex(h=>names.some(n=>h===n.toLowerCase()||h.includes(n.toLowerCase())));if(i>=0)col[k]=i}
+    if(col.name===undefined){alert('找不到「姓名」欄位。第一列必須是欄位名稱，至少要有「姓名」。\n可辨識的欄位：姓名、電話、LINE、Email、地址、生日、性別、公司、職業、來源、介紹人、標籤、身分證字號、備註');return}
+    if(!confirm(`將匯入 ${rows.length-1} 列資料，辨識到的欄位：${Object.keys(col).map(k=>rows[0][col[k]]).join('、')}。\n姓名與電話都相同的客戶會略過。要繼續嗎？`))return;
+    const existing=new Set(live('clients').map(c=>c.name+'|'+(c.phone||'')));let n=0,skip=0;
+    for(const r of rows.slice(1)){const g=k=>col[k]!==undefined?(r[col[k]]||'').trim():'';const name=g('name');if(!name)continue;const phone=g('phone').replace(/[^\d+]/g,'');if(existing.has(name+'|'+phone)){skip++;continue}
+      const gd=g('gender');const src=SOURCES.find(x=>g('source').includes(x))||(g('source')?'其他':'緣故');
+      put('clients',{id:uid(),name,phone,line:g('line'),email:g('email'),address:g('address'),birthday:normDate(g('birthday')),gender:gd.includes('女')?'女':gd.includes('男')?'男':'',idNo:g('idNo').toUpperCase(),company:g('company'),job:g('job'),source:src,referrer:g('referrer'),tags:g('tags').split(/[,，、\s]+/).map(x=>x.trim()).filter(Boolean),salesStage:'名單',salesNote:'',recruitActive:false,recruitStage:'未啟動',recruitNote:'',notes:g('notes'),family:[],traits:[]});
+      existing.add(name+'|'+phone);n++}
+    render();toast(`已匯入 ${n} 位客戶${skip?`，略過 ${skip} 位重複`:''}`)};
+  inp.click();
+}
+
+/* ========= 行事曆 ========= */
+const ymd=s=>s.replace(/-/g,'');
+function gcalUrl(t){
+  const c=t.clientId?C(t.clientId):null;let dates;
+  if(t.time){const [h,m]=t.time.split(':');const e=new Date(`${t.date}T${t.time}:00`);e.setHours(e.getHours()+1);dates=`${ymd(t.date)}T${h}${m}00/${ymd(iso(e))}T${pad(e.getHours())}${pad(e.getMinutes())}00`}
+  else{const n=parseDate(t.date);n.setDate(n.getDate()+1);dates=`${ymd(t.date)}/${ymd(iso(n))}`}
+  const details=[c?`客戶：${c.name}`:'',c&&c.phone?`電話：${c.phone}`:'',t.note||''].filter(Boolean).join('\n');
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(t.title)}&dates=${dates}&details=${encodeURIComponent(details)}${c&&c.address?`&location=${encodeURIComponent(c.address)}`:''}`;
+}
+const icsEsc=s=>String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+function exportIcs(){
+  const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//sales-secretary//TW','CALSCALE:GREGORIAN','X-WR-CALNAME:業務秘書'];
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
+  const ev=(uid,summary,ds,de,desc,rrule)=>{L.push('BEGIN:VEVENT',`UID:${uid}@sales-secretary`,`DTSTAMP:${stamp}`,ds,de,`SUMMARY:${icsEsc(summary)}`);if(desc)L.push(`DESCRIPTION:${icsEsc(desc)}`);if(rrule)L.push(rrule);L.push('END:VEVENT')};
+  let n=0;
+  for(const t of live('tasks').filter(x=>!x.done)){const c=t.clientId?C(t.clientId):null;const desc=[c?`客戶：${c.name}${c.phone?' '+c.phone:''}`:'',t.note||''].filter(Boolean).join('\n');
+    if(t.time){const [h,m]=t.time.split(':');const e=new Date(`${t.date}T${t.time}:00`);e.setHours(e.getHours()+1);ev(t.id,t.title,`DTSTART:${ymd(t.date)}T${h}${m}00`,`DTEND:${ymd(iso(e))}T${pad(e.getHours())}${pad(e.getMinutes())}00`,desc)}
+    else{const d=parseDate(t.date);d.setDate(d.getDate()+1);ev(t.id,t.title,`DTSTART;VALUE=DATE:${ymd(t.date)}`,`DTEND;VALUE=DATE:${ymd(iso(d))}`,desc)}n++}
+  for(const c of live('clients')){if(c.birthday&&c.birthday.length===10){const d=parseDate(c.birthday);if(!d)continue;d.setDate(d.getDate()+1);ev('bday-'+c.id,`${c.name} 生日`,`DTSTART;VALUE=DATE:${ymd(c.birthday)}`,`DTEND;VALUE=DATE:${ymd(iso(d))}`,'','RRULE:FREQ=YEARLY');n++}}
+  L.push('END:VCALENDAR');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([L.join('\r\n')],{type:'text/calendar;charset=utf-8'}));a.download=`業務秘書行事曆_${today()}.ics`;a.click();
+  toast(`已下載 ${n} 筆事項的行事曆檔，到 Google 日曆「設定 → 匯入」即可`);
+}
+
+/* ========= 電訪 / 專案名單 ========= */
+function listItemsOf(lid){return live('listItems').filter(x=>x.listId===lid)}
+function viewLists(){
+  if(ui.listId&&S.lists[ui.listId]&&!S.lists[ui.listId].deleted)return listDetail(S.lists[ui.listId]);
+  const lists=live('lists').sort((a,b)=>b.createdAt-a.createdAt);
+  return `<div class="row sb" style="margin-bottom:8px"><h1>電訪 / 專案名單</h1><button class="btn p" data-act="newList">＋ 新名單</button></div>
+  <p class="muted small" style="margin:0 0 10px">建立一個專案，把客戶勾進來逐一電訪並記錄結果。到「客戶」頁按「勾選」可以批次加入。</p>
+  ${lists.length?`<div class="card list">${lists.map(l=>{const items=listItemsOf(l.id);const called=items.filter(i=>i.status&&i.status!=='未撥').length;const ok=items.filter(i=>i.status==='約訪成功').length;
+    return `<div class="item" data-act="openList" data-id="${l.id}"><div class="main"><div class="t">${esc(l.name)} ${l.closed?'<span class="badge gray">已結案</span>':''}</div><div class="d">${esc(l.purpose||'').split('\n')[0]}${l.purpose?' ・ ':''}建立於 ${new Date(l.createdAt).toLocaleDateString('zh-TW')}</div></div><div class="r">已撥 ${called} / ${items.length}<br>約訪成功 ${ok}</div></div>`}).join('')}</div>`
+  :'<div class="card empty">還沒有名單。按「＋ 新名單」建立，例如「11 月保單健檢電訪」或「說明會邀約」</div>'}`;
+}
+function listDetail(l){
+  const items=listItemsOf(l.id).map(i=>({...i,client:C(i.clientId)})).filter(i=>i.client&&!i.client.deleted);
+  const order=s=>!s||s==='未撥'?0:(s==='再聯絡'||s==='未接')?1:2;
+  items.sort((a,b)=>order(a.status)-order(b.status)||a.client.name.localeCompare(b.client.name,'zh-Hant'));
+  const counts={};for(const i of items){const k=i.status||'未撥';counts[k]=(counts[k]||0)+1}
+  return `<div class="row sb" style="margin-bottom:8px"><div class="row"><button class="btn s" data-act="closeList">‹ 名單</button><h1 style="margin:0">${esc(l.name)}</h1>${l.closed?'<span class="badge gray">已結案</span>':''}</div>
+    <div class="row"><button class="btn s p" data-act="pickClients" data-id="${l.id}">＋ 加入客戶</button><button class="btn s" data-act="editList" data-id="${l.id}">編輯</button><button class="btn s d" data-act="delList" data-id="${l.id}">刪除</button></div></div>
+  ${l.purpose?`<div class="card" style="padding:10px 14px"><b>目的 / 話術重點：</b><span style="white-space:pre-wrap">${esc(l.purpose)}</span></div>`:''}
+  <div class="chips" style="margin-bottom:10px"><span class="chip on">共 ${items.length} 位</span>${CALL_STATUS.map(s=>`<span class="chip">${s} ${counts[s]||0}</span>`).join('')}</div>
+  <div class="card list">${items.length?items.map(i=>{const c=i.client;const lc=lastContact(c.id);return `<div class="task" style="align-items:center;flex-wrap:wrap">
+      <div class="main" style="min-width:170px"><div class="t"><a href="#" data-act="openClient" data-id="${c.id}">${esc(c.name)}</a> ${c.phone?`<a href="tel:${esc(c.phone)}" class="small">📞 ${esc(c.phone)}</a>`:'<span class="badge gray">無電話</span>'}</div>
+        <div class="d small muted">${esc([c.company,c.job].filter(Boolean).join(' '))}${lc?` ・ 上次聯絡 ${fmtDate(lc)}`:''}${i.calledAt?` ・ 本次撥打 ${fmtDate(i.calledAt)}`:''}</div></div>
+      <select data-act="listStatus" data-id="${i.id}" style="width:auto">${CALL_STATUS.map(s=>`<option ${(i.status||'未撥')===s?'selected':''}>${s}</option>`).join('')}</select>
+      <input type="text" data-act="listNote" data-id="${i.id}" value="${esc(i.note||'')}" placeholder="結果備註" style="flex:1;min-width:150px">
+      <button class="btn s" data-act="listLog" data-id="${i.id}">寫紀錄</button>
+      <button class="btn s ghost" data-act="removeListItem" data-id="${i.id}" title="移出名單">✕</button></div>`}).join(''):'<div class="empty">名單是空的，按「＋ 加入客戶」或到客戶頁勾選後加入</div>'}</div>`;
+}
+function listForm(l){
+  l=l||{};
+  modal(l.id?'編輯名單':'新名單',`<label class="f"><span class="l">名單名稱 *</span><input type="text" name="name" required value="${esc(l.name||'')}" placeholder="例如：11 月保單健檢電訪"></label>
+    <label class="f"><span class="l">目的 / 話術重點（選填）</span><textarea name="purpose" placeholder="例如：提醒年底醫療險健檢，順便邀約 12/5 說明會">${esc(l.purpose||'')}</textarea></label>
+    ${l.id?`<label class="chk"><input type="checkbox" name="closed" ${l.closed?'checked':''}>已結案（不再顯示在進行中）</label>`:''}`,o=>{
+    const obj=put('lists',Object.assign({},l,{id:l.id||uid(),name:o.name,purpose:o.purpose,closed:o.closed==='on'}));
+    closeModal();ui.view='lists';ui.listId=obj.id;render();toast(l.id?'已更新':'已建立名單');
+  },l.id?`<button type="button" class="btn d" data-act="delList" data-id="${l.id}">刪除</button>`:'');
+}
+function addClientsToList(lid,ids){
+  const have=new Set(listItemsOf(lid).map(i=>i.clientId));let n=0;
+  for(const cid of ids){if(have.has(cid))continue;put('listItems',{id:uid(),listId:lid,clientId:cid,status:'未撥',note:''});n++}
+  return n;
+}
+function pickClientsModal(lid){
+  ui.pick={q:'',f:'all'};
+  modal(`加入客戶到「${esc(S.lists[lid].name)}」`,`<input type="search" id="pickSearch" placeholder="搜尋姓名、公司、標籤…" style="margin-bottom:8px">
+    <div class="chips" style="margin-bottom:8px">${[['all','全部'],['stale','太久沒聯絡'],['sales','銷售進行中'],['recruit','增員進行中'],['customer','已成交']].map(([k,l])=>`<button type="button" class="chip ${k==='all'?'on':''}" data-act="pickFilter" data-f="${k}">${l}</button>`).join('')}</div>
+    <div class="row sb small muted" style="margin-bottom:4px"><span id="pickCount"></span><span><a href="#" data-act="pickAll">全選</a> ・ <a href="#" data-act="pickNone">清除</a></span></div>
+    <div id="pickList" style="max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 10px"></div>`,o=>{
+    const ids=[...document.querySelectorAll('#pickList input:checked')].map(i=>i.value);
+    const n=addClientsToList(lid,ids);closeModal();render();toast(`已加入 ${n} 位客戶`);
+  });
+  renderPickList(lid);
+}
+function renderPickList(lid){
+  const box=$('#pickList');if(!box)return;
+  const checked=new Set([...box.querySelectorAll('input:checked')].map(i=>i.value));
+  const have=new Set(listItemsOf(lid).map(i=>i.clientId));
+  const saved={q:ui.q,filter:ui.filter,sales:ui.sales,recruit:ui.recruit};
+  Object.assign(ui,{q:ui.pick.q,filter:ui.pick.f,sales:'',recruit:''});
+  const arr=filteredClients().filter(c=>!have.has(c.id));
+  Object.assign(ui,saved);
+  box.innerHTML=arr.length?arr.map(c=>`<label class="chk" style="margin:4px 0"><input type="checkbox" value="${c.id}" ${checked.has(c.id)?'checked':''}><span>${esc(c.name)} ${stageBadges(c)} <span class="muted small">${esc([c.company,c.phone].filter(Boolean).join('・'))}${lastContact(c.id)?` ・ 上次 ${fmtDate(lastContact(c.id))}`:' ・ 尚未聯絡'}</span></span></label>`).join(''):'<div class="empty">沒有符合的客戶（已在名單中的不會重複顯示）</div>';
+  $('#pickCount').textContent=`${arr.length} 位可加入`;
+}
+function addSelToListModal(){
+  const lists=live('lists').filter(l=>!l.closed).sort((a,b)=>b.createdAt-a.createdAt);
+  modal(`把 ${ui.selected.size} 位客戶加入名單`,`<label class="f"><span class="l">選擇名單</span><select name="lid"><option value="">＋ 建立新名單</option>${lists.map(l=>`<option value="${l.id}">${esc(l.name)}（${listItemsOf(l.id).length} 位）</option>`).join('')}</select></label>
+    <label class="f"><span class="l">新名單名稱（選擇「建立新名單」時填寫）</span><input type="text" name="name" placeholder="例如：11 月保單健檢電訪"></label>`,o=>{
+    let lid=o.lid;
+    if(!lid){if(!o.name){alert('請輸入新名單名稱');return}lid=put('lists',{id:uid(),name:o.name,purpose:'',closed:false}).id}
+    const n=addClientsToList(lid,[...ui.selected]);
+    ui.selected=new Set();ui.select=false;closeModal();ui.view='lists';ui.listId=lid;render();toast(`已加入 ${n} 位客戶`);
+  });
+}
+
+/* ========= 表單 ========= */
+function modal(title,inner,onSubmit,extraButtons){
+  closeModal();
+  const m=document.createElement('div');m.className='modal';m.id='modal';
+  m.innerHTML=`<div class="box"><h3>${title}</h3><form id="mform">${inner}<div class="actions">${extraButtons||''}<button type="button" class="btn" data-act="closeModal">取消</button><button class="btn p">儲存</button></div></form></div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{if(e.target===m)closeModal()});
+  m.querySelector('#mform').addEventListener('submit',e=>{e.preventDefault();const fd=new FormData(e.target);const o={};for(const [k,v] of fd.entries()){if(k.endsWith('[]')){(o[k]=o[k]||[]).push(v)}else o[k]=v.trim?v.trim():v}onSubmit(o,e.target);});
+  const first=m.querySelector('input:not([type=hidden]),select,textarea');if(first&&window.innerWidth>760)first.focus();
+}
+function closeModal(){const m=$('#modal');if(m)m.remove()}
+const opt=(arr,sel)=>arr.map(s=>`<option ${s===sel?'selected':''}>${s}</option>`).join('');
+const famRow=(f={})=>`<div class="rep"><input type="hidden" name="fam_cid[]" value="${esc(f.clientId||'')}"><select name="fam_rel[]">${opt(RELATIONS,f.relation||'配偶')}</select><input type="text" name="fam_name[]" placeholder="姓名" value="${esc(f.name||'')}"><input type="date" name="fam_bday[]" value="${esc(f.birthday||'')}"><input type="text" name="fam_note[]" placeholder="備註（學校、職業…）" value="${esc(f.note||'')}"><button type="button" class="btn s del" data-act="removeRow">✕</button></div>`;
+
+const riderRow=(r={})=>`<div class="rep"><input type="text" name="rd_name[]" placeholder="附約名稱（例：實支實付醫療）" value="${esc(r.name||'')}"><input type="text" name="rd_amount[]" placeholder="保額 / 計畫別 / 單位" value="${esc(r.amount||'')}"><input type="number" name="rd_prem[]" placeholder="每期保費" value="${esc(r.premium||'')}"><input type="text" name="rd_note[]" placeholder="備註（年期、到期日…）" value="${esc(r.note||'')}"><button type="button" class="btn s del" data-act="removeRow">✕</button></div>`;
+function clientForm(c){
+  c=c||{};
+  const inner=`<div class="fgrid">
+    <label class="f"><span class="l">姓名 *</span><input type="text" name="name" required value="${esc(c.name||'')}"></label>
+    <label class="f"><span class="l">電話</span><input type="tel" name="phone" value="${esc(c.phone||'')}"></label>
+    <label class="f"><span class="l">LINE ID / 暱稱</span><input type="text" name="line" value="${esc(c.line||'')}"></label>
+    <label class="f"><span class="l">Email</span><input type="email" name="email" value="${esc(c.email||'')}"></label>
+    <label class="f w"><span class="l">地址</span><input type="text" name="address" value="${esc(c.address||'')}"></label>
+    <label class="f"><span class="l">生日</span><input type="date" name="birthday" value="${esc(c.birthday||'')}"></label>
+    <label class="f"><span class="l">身分證字號</span><input type="text" name="idNo" maxlength="10" autocapitalize="characters" style="text-transform:uppercase" value="${esc(c.idNo||'')}"></label>
+    <label class="f"><span class="l">性別</span><select name="gender">${opt(['','男','女'],c.gender||'')}</select></label>
+    <label class="f"><span class="l">公司</span><input type="text" name="company" value="${esc(c.company||'')}"></label>
+    <label class="f"><span class="l">職業 / 職稱</span><input type="text" name="job" value="${esc(c.job||'')}"></label>
+    <label class="f"><span class="l">來源</span><select name="source">${opt(SOURCES,c.source||'緣故')}</select></label>
+    <label class="f"><span class="l">介紹人</span><input type="text" name="referrer" value="${esc(c.referrer||'')}"></label>
+    <label class="f w"><span class="l">標籤（用逗號分隔，例如：高資產, 有小孩, 企業主）</span><input type="text" name="tags" value="${esc((c.tags||[]).join(', '))}"></label>
+    <label class="f"><span class="l">銷售階段</span><select name="salesStage">${opt(SALES_STAGES,c.salesStage||'名單')}</select></label>
+    <label class="f"><span class="l">銷售備註（需求、預算、關鍵人）</span><input type="text" name="salesNote" value="${esc(c.salesNote||'')}"></label>
+    <label class="chk w"><input type="checkbox" name="recruitActive" ${c.recruitActive?'checked':''}>列為增員對象</label>
+    <label class="f"><span class="l">增員階段</span><select name="recruitStage">${opt(RECRUIT_STAGES,c.recruitStage||'未啟動')}</select></label>
+    <label class="f"><span class="l">增員備註（動機、顧慮、家人態度）</span><input type="text" name="recruitNote" value="${esc(c.recruitNote||'')}"></label>
+    <label class="f w"><span class="l">備註</span><textarea name="notes">${esc(c.notes||'')}</textarea></label>
+   </div>
+   <div class="sec"><div class="row sb"><h3>家庭成員</h3><button type="button" class="btn s" data-act="addFam">＋ 成員</button></div><div id="famRows">${(c.family||[]).map(famRow).join('')}</div><p class="small muted">存檔後可在「詳細資料」把家庭成員一鍵轉為客戶。</p></div>`;
+  modal(c.id?'編輯客戶':'新增客戶',inner,o=>{
+    const fam=(o['fam_rel[]']||[]).map((r,i)=>({relation:r,name:(o['fam_name[]']||[])[i]||'',birthday:(o['fam_bday[]']||[])[i]||'',note:(o['fam_note[]']||[])[i]||'',clientId:(o['fam_cid[]']||[])[i]||''})).filter(f=>f.name||f.birthday);
+    const idNo=(o.idNo||'').toUpperCase().replace(/\s/g,'');
+    if(idNo&&!validTwId(idNo)&&!confirm('身分證字號格式看起來不正確，仍要儲存嗎？'))return;
+    const obj=Object.assign({},c,{id:c.id||uid(),name:o.name,phone:o.phone,idNo,line:o.line,email:o.email,address:o.address,birthday:o.birthday,gender:o.gender,company:o.company,job:o.job,source:o.source,referrer:o.referrer,
+      tags:o.tags.split(/[,，]/).map(s=>s.trim()).filter(Boolean),salesStage:o.salesStage,salesNote:o.salesNote,recruitActive:o.recruitActive==='on',recruitStage:o.recruitStage,recruitNote:o.recruitNote,notes:o.notes,family:fam});
+    if(obj.salesStage==='成交'&&c.salesStage!=='成交')obj.closedAt=Date.now();if(obj.recruitActive&&obj.recruitStage==='已報到'&&c.recruitStage!=='已報到')obj.recruitedAt=Date.now();
+    put('clients',obj);closeModal();ui.view='clients';ui.clientId=obj.id;render();toast(c.id?'已更新':'已新增客戶');
+  });
+}
+function logForm(clientId,l){
+  l=l||{};const c=C(clientId);
+  const inner=`<div class="muted small" style="margin-bottom:8px">客戶：${esc(c.name)}</div><div class="fgrid">
+    <label class="f"><span class="l">日期</span><input type="date" name="date" required value="${esc(l.date||today())}"></label>
+    <label class="f"><span class="l">方式</span><select name="type">${opt(LOG_TYPES,l.type||'拜訪')}</select></label>
+    <label class="f w"><span class="l">談了什麼 / 進展</span><textarea name="content" placeholder="例如：聊到小孩明年上大學，對教育金有興趣；對增員還在觀望，擔心收入不穩">${esc(l.content||'')}</textarea></label>
+    <label class="f w"><span class="l">實地觀察（家庭、公司、經濟狀況、誰做決定、興趣）</span><textarea name="observations" placeholder="例如：住透天、兩台車；太太管錢；公司約 15 人，老闆親自跑業務">${esc(l.observations||'')}</textarea></label>
+    <label class="f"><span class="l">下一步</span><input type="text" name="nextStep" placeholder="例如：帶建議書回訪" value="${esc(l.nextStep||'')}"></label>
+    <label class="f"><span class="l">預計日期（填了會自動建立待辦）</span><input type="date" name="nextDate" value="${esc(l.nextDate||'')}"></label>
+  </div>
+  <details ${(!l.id||l.type==='實地調查')?'open':''} style="margin-top:4px"><summary style="cursor:pointer;font-weight:600">勾選客戶特徵（家庭、居住、經濟、興趣、健康、態度）</summary><p class="small muted" style="margin:4px 0">勾選的會存進客戶資料；這次新勾的會自動寫進「實地觀察」。</p>${traitsChips(c.traits)}</details>`;
+  modal(l.id?'編輯接觸紀錄':'新增接觸紀錄',inner,o=>{
+    const obj=Object.assign({},l,{id:l.id||uid(),clientId,date:o.date,type:o.type,content:o.content,observations:o.observations,nextStep:o.nextStep,nextDate:o.nextDate});
+    const newTraits=traitsFromForm(o),prev=new Set(c.traits||[]),added=newTraits.filter(t=>!prev.has(t));
+    if(added.length)obj.observations=(obj.observations?obj.observations+'\n':'')+'新觀察到：'+added.join('、');
+    if(JSON.stringify(newTraits)!==JSON.stringify(c.traits||[])){c.traits=newTraits;put('clients',c)}
+    put('logs',obj);
+    if(o.nextStep&&o.nextDate&&!(l.nextStep===o.nextStep&&l.nextDate===o.nextDate)){put('tasks',{id:uid(),clientId,title:o.nextStep,date:o.nextDate,type:'待辦',done:false,note:'來自接觸紀錄'})}
+    closeModal();ui.tab='logs';render();toast('已儲存紀錄');
+  },l.id?`<button type="button" class="btn d" data-act="delLog" data-id="${l.id}">刪除</button>`:'');
+}
+function policyForm(clientId,p){
+  p=p||{};const c=C(clientId);
+  const inner=`<div class="muted small" style="margin-bottom:8px">客戶：${esc(c.name)}</div><div class="fgrid">
+    <label class="f"><span class="l">保險公司</span><input type="text" name="company" value="${esc(p.company||'')}" placeholder="例如：安聯"></label>
+    <label class="f"><span class="l">主約商品 / 險種名稱</span><input type="text" name="product" value="${esc(p.product||'')}"></label>
+    <label class="f"><span class="l">類型</span><select name="type"><option value="">（未分類）</option>${opt(POLICY_TYPES,p.type||'')}</select></label>
+    <label class="f"><span class="l">保單號碼</span><input type="text" name="policyNo" value="${esc(p.policyNo||'')}"></label>
+    <label class="f"><span class="l">要保人</span><input type="text" name="holder" value="${esc(p.holder??c.name)}"></label>
+    <label class="f"><span class="l">被保險人</span><input type="text" name="insured" value="${esc(p.insured??c.name)}"></label>
+    <label class="f"><span class="l">投保日（生效日）</span><input type="date" name="date" value="${esc(p.date||'')}"></label>
+    <label class="f"><span class="l">繳費方式</span><select name="payMode">${opt(PAY_MODES,p.payMode||'年繳')}</select></label>
+    <label class="f"><span class="l">主約每期保費</span><input type="number" name="premium" value="${esc(p.premium||'')}"></label>
+    <label class="f"><span class="l">繳費年期（年）</span><input type="number" name="years" min="0" value="${esc(p.years||'')}"></label>
+    <label class="f"><span class="l">保額</span><input type="number" name="amount" value="${esc(p.amount||'')}"></label>
+    <label class="f"><span class="l">狀態</span><select name="status">${opt(POLICY_STATUS,p.status||'有效')}</select></label>
+    <label class="f"><span class="l">購買管道</span><select name="channel"><option value="">（未填）</option>${opt(CHANNELS,p.channel||'')}</select></label>
+    <label class="f"><span class="l">承辦業務員姓名</span><input type="text" name="agentName" value="${esc(p.agentName||'')}" placeholder="若是你本人可留白"></label>
+    <label class="f"><span class="l">客戶與該業務員的關係</span><select name="agentRelation"><option value="">（未填）</option>${opt(AGENT_RELS,p.agentRelation||'')}</select></label>
+    <div class="f w"><span class="l small muted">當初買這張保單想解決什麼問題（可複選）</span><div class="chips sm" style="margin:4px 0">${PURPOSES.map(x=>`<label class="chip"><input type="checkbox" name="purposes[]" value="${esc(x)}" ${(p.purposes||[]).includes(x)?'checked':''}>${esc(x)}</label>`).join('')}</div></div>
+    <label class="f w"><span class="l">購買背景補充（誰提議、當時的顧慮、滿不滿意…）</span><input type="text" name="purposeNote" value="${esc(p.purposeNote||'')}"></label>
+    <label class="f w"><span class="l">備註（受益人、特殊約定…）</span><textarea name="note">${esc(p.note||'')}</textarea></label>
+  </div>
+  <div class="sec"><div class="row sb"><h3>附約</h3><button type="button" class="btn s" data-act="addRider">＋ 附約</button></div><div id="riderRows">${(p.riders||[]).map(riderRow).join('')}</div><p class="small muted">每筆附約可填名稱、保額或計畫別、每期保費；保單頁會自動加總主約與附約保費。</p></div>`;
+  modal(p.id?'編輯保單':'新增保單',inner,o=>{
+    const riders=(o['rd_name[]']||[]).map((n,i)=>({name:n,amount:(o['rd_amount[]']||[])[i]||'',premium:(o['rd_prem[]']||[])[i]||'',note:(o['rd_note[]']||[])[i]||''})).filter(r=>r.name);
+    put('policies',Object.assign({},p,{id:p.id||uid(),clientId,company:o.company,product:o.product,type:o.type,policyNo:o.policyNo,holder:o.holder,insured:o.insured,date:o.date,payMode:o.payMode,premium:o.premium,years:o.years,amount:o.amount,status:o.status,note:o.note,riders,channel:o.channel,agentName:o.agentName,agentRelation:o.agentRelation,purposes:o['purposes[]']||[],purposeNote:o.purposeNote}));
+    closeModal();ui.tab='policies';render();toast('已儲存保單');
+  },p.id?`<button type="button" class="btn d" data-act="delPolicy" data-id="${p.id}">刪除</button>`:'');
+}
+function famToClient(cid,i){
+  const c=C(cid);const f=(c.family||[])[i];if(!f)return;
+  if(f.clientId&&C(f.clientId)&&!C(f.clientId).deleted){ui.clientId=f.clientId;render();return}
+  let name=f.name;if(!name){name=prompt('請輸入這位家人的姓名：');if(!name)return;f.name=name}
+  const n={id:uid(),name,phone:'',line:'',email:'',address:c.address||'',birthday:f.birthday||'',gender:'',idNo:'',company:'',job:'',source:'緣故',referrer:c.name,tags:['家人'],
+    salesStage:'名單',salesNote:'',recruitActive:false,recruitStage:'未啟動',recruitNote:'',notes:f.note?`（${c.name} 的${f.relation}）${f.note}`:`${c.name} 的${f.relation}`,
+    family:[{relation:invRel(f.relation,c.gender),name:c.name,birthday:c.birthday||'',note:'',clientId:c.id}]};
+  put('clients',n);f.clientId=n.id;put('clients',c);
+  ui.clientId=n.id;ui.tab='info';render();toast(`已將 ${name} 建為客戶，可補上電話與其他資料`);
+}
+function taskForm(t,clientId){
+  t=t||{};const cid=t.clientId||clientId||'';
+  const clients=live('clients').sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
+  const inner=`<div class="fgrid">
+    <label class="f w"><span class="l">事項 *</span><input type="text" name="title" required value="${esc(t.title||'')}" placeholder="例如：14:00 和陳先生在公司談建議書"></label>
+    <label class="f"><span class="l">日期</span><input type="date" name="date" required value="${esc(t.date||today())}"></label>
+    <label class="f"><span class="l">時間（選填）</span><input type="time" name="time" value="${esc(t.time||'')}"></label>
+    <label class="f"><span class="l">類型</span><select name="type">${opt(['待辦','行程'],t.type||(t.time?'行程':'待辦'))}</select></label>
+    <label class="f"><span class="l">相關客戶</span><select name="clientId"><option value="">（無）</option>${clients.map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
+    <label class="f w"><span class="l">備註</span><input type="text" name="note" value="${esc(t.note||'')}"></label>
+  </div>`;
+  modal(t.id?'編輯行程 / 待辦':'新增行程 / 待辦',inner,o=>{
+    put('tasks',Object.assign({},t,{id:t.id||uid(),title:o.title,date:o.date,time:o.time,type:o.type,clientId:o.clientId,note:o.note,done:!!t.done}));
+    closeModal();render();toast('已儲存');
+  },t.id?`<button type="button" class="btn d" data-act="delTask" data-id="${t.id}">刪除</button>`:'');
+}
+function changePassForm(){
+  modal('更改密碼',`<label class="f"><span class="l">新密碼（至少 6 碼）</span><input type="password" name="p1" required minlength="6"></label><label class="f"><span class="l">再輸入一次</span><input type="password" name="p2" required></label><p class="small muted">更改後，其他裝置匯入新的同步檔時會要求輸入新密碼一次。</p>`,async o=>{
+    if(o.p1!==o.p2){alert('兩次密碼不同');return}
+    PASS=o.p1;keyCache={pass:null};if(localStorage.getItem('ss.pass'))localStorage.setItem('ss.pass',PASS);
+    await doSave();if(FH)await writeFile();closeModal();toast('密碼已更改');
+  });
+}
+function exportCsv(){
+  const rows=[['姓名','身分證字號','電話','LINE','Email','地址','生日','性別','公司','職業','來源','介紹人','標籤','銷售階段','增員對象','增員階段','上次聯絡','備註']];
+  for(const c of live('clients'))rows.push([c.name,c.idNo,c.phone,c.line,c.email,c.address,c.birthday,c.gender,c.company,c.job,c.source,c.referrer,(c.tags||[]).join(' '),c.salesStage,c.recruitActive?'是':'',c.recruitActive?c.recruitStage:'',lastContact(c.id)||'',c.notes]);
+  downloadCsv(rows,`客戶名單_${today()}.csv`);
+}
+function downloadCsv(rows,name){const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;a.click();toast('CSV 是未加密的明文，用完請刪除')}
+function exportLogsCsv(){const rows=[['日期','客戶','方式','內容','觀察','下一步','預計日期']];for(const l of live('logs').sort((a,b)=>b.date.localeCompare(a.date))){const c=C(l.clientId);rows.push([l.date,c?c.name:'',l.type,l.content,l.observations,l.nextStep,l.nextDate])}downloadCsv(rows,`接觸紀錄_${today()}.csv`)}
+function exportPoliciesCsv(){const rows=[['客戶','保險公司','主約商品','類型','保單號碼','要保人','被保險人','投保日','繳費方式','主約每期保費','繳費年期','主約保額','狀態','附約','附約保費合計','購買管道','業務員','與業務員關係','購買目的','購買背景','已持有','備註']];for(const p of live('policies')){const c=C(p.clientId);const rd=p.riders||[];rows.push([c?c.name:'',p.company,p.product,p.type,p.policyNo,p.holder,p.insured,p.date,p.payMode,p.premium,p.years,p.amount,p.status,rd.map(r=>[r.name,r.amount,r.premium?r.premium+'元':''].filter(Boolean).join(' ')).join('；'),rd.reduce((a,r)=>a+(+r.premium||0),0)||'',p.channel,p.agentName,p.agentRelation,(p.purposes||[]).join('、'),p.purposeNote,heldText(p.date),p.note])}downloadCsv(rows,`保單_${today()}.csv`)}
+
+/* ========= 事件 ========= */
+document.addEventListener('click',async e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const act=el.dataset.act,id=el.dataset.id;
+  if(el.tagName==='INPUT'&&el.type==='checkbox')return; // 交給 change
+  if(el.tagName==='SELECT'||el.tagName==='FORM'||(el.tagName==='INPUT'&&el.type==='search'))return;
+  if(act==='ext'){e.stopPropagation();return}
+  if(el.tagName==='A')e.preventDefault();
+  switch(act){
+    case 'nav':ui.view=el.dataset.v;if(ui.view!=='clients'){ui.clientId=null;ui.select=false}if(ui.view!=='lists')ui.listId=null;render();window.scrollTo(0,0);break;
+    case 'quickAdd':if(ui.view==='schedule')taskForm(null);else if(ui.view==='lists'&&ui.listId)pickClientsModal(ui.listId);else if(ui.view==='lists')listForm();else if(ui.view==='clients'&&ui.clientId)logForm(ui.clientId);else clientForm();break;
+    case 'addClient':clientForm();break;
+    case 'editClient':clientForm(C(id));break;
+    case 'delClient':if(confirm(`確定刪除「${C(id).name}」？相關紀錄、待辦與保單也會一併刪除。`)){del('clients',id);for(const l of clientLogs(id))del('logs',l.id);for(const t of clientTasks(id))del('tasks',t.id);for(const p of clientPolicies(id))del('policies',p.id);ui.clientId=null;render();toast('已刪除')}break;
+    case 'openClient':ui.view='clients';ui.clientId=id;ui.tab='logs';render();window.scrollTo(0,0);break;
+    case 'closeClient':ui.clientId=null;ui.showId=null;render();break;
+    case 'tab':ui.tab=el.dataset.t;render();break;
+    case 'filterClients':ui.view='clients';ui.filter=el.dataset.f;ui.clientId=null;render();window.scrollTo(0,0);break;
+    case 'addLog':logForm(id);break;
+    case 'editLog':logForm(S.logs[id].clientId,S.logs[id]);break;
+    case 'delLog':if(confirm('刪除這筆紀錄？')){del('logs',id);closeModal();render()}break;
+    case 'addTask':taskForm(null,id);break;
+    case 'editTask':taskForm(S.tasks[id]);break;
+    case 'delTask':if(confirm('刪除這筆待辦？')){del('tasks',id);closeModal();render()}break;
+    case 'closeModal':closeModal();break;
+    case 'toggleSelect':ui.select=!ui.select;if(!ui.select)ui.selected=new Set();ui.clientId=null;render();break;
+    case 'selRow':if(ui.selected.has(id))ui.selected.delete(id);else ui.selected.add(id);render();break;
+    case 'selAll':for(const c of filteredClients())ui.selected.add(c.id);render();break;
+    case 'selNone':ui.selected=new Set();render();break;
+    case 'addSelToList':if(ui.selected.size)addSelToListModal();break;
+    case 'newList':listForm();break;
+    case 'openList':ui.view='lists';ui.listId=id;render();window.scrollTo(0,0);break;
+    case 'closeList':ui.listId=null;render();break;
+    case 'editList':listForm(S.lists[id]);break;
+    case 'delList':if(confirm(`刪除名單「${S.lists[id].name}」？客戶資料與接觸紀錄不會被刪除。`)){del('lists',id);for(const i of listItemsOf(id))del('listItems',i.id);closeModal();ui.listId=null;render();toast('已刪除名單')}break;
+    case 'pickClients':pickClientsModal(id);break;
+    case 'pickFilter':ui.pick.f=el.dataset.f;document.querySelectorAll('[data-act=pickFilter]').forEach(b=>b.classList.toggle('on',b===el));renderPickList(ui.listId);break;
+    case 'pickAll':document.querySelectorAll('#pickList input').forEach(i=>i.checked=true);break;
+    case 'pickNone':document.querySelectorAll('#pickList input').forEach(i=>i.checked=false);break;
+    case 'removeListItem':del('listItems',id);render();break;
+    case 'listLog':{const it=S.listItems[id];const l=S.lists[it.listId];logForm(it.clientId,{type:'電話',content:`【${l.name}】`});break}
+    case 'exportIcs':exportIcs();break;
+    case 'editTraits':traitsForm(id);break;
+    case 'copyPrompt':try{await navigator.clipboard.writeText(topicPrompt());toast('已複製，貼到任何 AI 助理即可')}catch{prompt('請手動複製：',topicPrompt())}break;
+    case 'importCsv':importCsv();break;
+    case 'linkTopicFile':linkTopicFile();break;
+    case 'unlinkTopicFile':unlinkTopicFile();break;
+    case 'refreshTopic':refreshTopic(true);break;
+    case 'resetTopicPrompt':if(confirm('還原成預設的提示詞？你修改過的內容會被覆蓋。')){setSettings({topicPrompt:''});render();toast('已還原')}break;
+    case 'exportLogsCsv':exportLogsCsv();break;
+    case 'exportPoliciesCsv':exportPoliciesCsv();break;
+    case 'addFam':$('#famRows').insertAdjacentHTML('beforeend',famRow());break;
+    case 'addPolicy':policyForm(id);break;
+    case 'editPolicy':policyForm(S.policies[id].clientId,S.policies[id]);break;
+    case 'delPolicy':if(confirm('刪除這張保單紀錄？')){del('policies',id);closeModal();render()}break;
+    case 'famToClient':famToClient(id,+el.dataset.i);break;
+    case 'revealId':ui.showId=id;render();break;
+    case 'hideId':ui.showId=null;render();break;
+    case 'addRider':$('#riderRows').insertAdjacentHTML('beforeend',riderRow());break;
+    case 'removeRow':el.closest('.rep').remove();break;
+    case 'linkNew':linkFile(false);break;
+    case 'linkExisting':linkFile(true);break;
+    case 'unlinkFile':unlinkFile();break;
+    case 'syncNow':if(await hasPerm(true)){const got=await pullFile(true);await writeFile();if(!got)toast('同步完成')}else toast('沒有取得檔案權限');break;
+    case 'grantPerm':if(await hasPerm(true)){await pullFile(true);render();toast('已重新連結同步檔')}break;
+    case 'exportShare':exportFile(true);break;
+    case 'exportDownload':exportFile(false);break;
+    case 'import':importFile();break;
+    case 'exportCsv':exportCsv();break;
+    case 'changePass':changePassForm();break;
+    case 'wipe':if(confirm('確定清除這台裝置上的所有資料？雲端硬碟上的資料不會被刪除。')&&confirm('再次確認：清除後無法復原。'))wipeDevice();break;
+    case 'gSignIn':googleSignIn();break;
+    case 'switchToGoogle':if(confirm('改用 Google 帳號登入後，資料會自動存到你的 Google 雲端硬碟並同步，原本的同步檔不再使用。要繼續嗎？'))googleSignIn();break;
+    case 'gSignOut':googleSignOut();break;
+    case 'cloudSyncNow':{const ok=await cloudSync({force:true,push:true,loud:true});if(ok)toast('同步完成');break}
+    case 'gReauth':{let got=false;try{await requestToken('silent');got=true}catch{try{await requestToken('select');got=true}catch(e){toast('連線失敗：'+e.message)}}if(got){needAuth=false;render();cloudSync({force:true,loud:true})}break}
+    case 'setPin':pinForm();break;
+    case 'removePin':if(confirm('移除開啟 PIN？')){localStorage.removeItem('ss.pinHash');render();toast('已移除 PIN')}break;
+  }
+});
+document.addEventListener('change',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;const act=el.dataset.act,id=el.dataset.id;
+  switch(act){
+    case 'toggleTask':{const t=S.tasks[id];t.done=el.checked;t.doneAt=el.checked?Date.now():null;put('tasks',t);render();break}
+    case 'setSales':{const c=C(id);if(el.value==='成交'&&c.salesStage!=='成交')c.closedAt=Date.now();c.salesStage=el.value;put('clients',c);render();break}
+    case 'setRecruit':{const c=C(id);if(el.value==='已報到'&&c.recruitStage!=='已報到')c.recruitedAt=Date.now();c.recruitStage=el.value;put('clients',c);render();break}
+    case 'setRecruitActive':{const c=C(id);c.recruitActive=el.checked;if(el.checked&&(!c.recruitStage||c.recruitStage==='未啟動'))c.recruitStage='聊過意願';put('clients',c);render();break}
+    case 'salesFilter':ui.sales=el.value;render();break;
+    case 'recruitFilter':ui.recruit=el.value;render();break;
+    case 'toggleShowDone':ui.showDone=el.checked;render();break;
+    case 'selClient':if(el.checked)ui.selected.add(id);else ui.selected.delete(id);render();break;
+    case 'sortClients':ui.sort=el.value;render();break;
+    case 'topicPromptText':setSettings({topicPrompt:el.value.trim()});toast('提示詞已儲存');break;
+    case 'topicUrlText':setSettings({topicUrl:el.value.trim()});toast(el.value.trim()?'已儲存網址，開啟程式時會自動讀取':'已清除網址');if(el.value.trim())refreshTopic(true);break;
+    case 'topicText':{const tp=Object.assign({},S.settings.topics||{});tp[today()]=el.value.trim();for(const k of Object.keys(tp))if(daysBetween(k,today())>60)delete tp[k];setSettings({topics:tp});toast('已儲存今日話題');break}
+    case 'listStatus':{const it=S.listItems[id];it.status=el.value;if(el.value!=='未撥')it.calledAt=today();put('listItems',it);render();break}
+    case 'listNote':{const it=S.listItems[id];it.note=el.value.trim();put('listItems',it);break}
+    case 'toggleRemember':if(el.checked)localStorage.setItem('ss.pass',PASS);else localStorage.removeItem('ss.pass');toast(el.checked?'已記住密碼':'已取消記住');break;
+  }
+});
+document.addEventListener('input',e=>{if(e.target.dataset.act==='search'){ui.q=e.target.value;ui.focusSearch=true;render()}else if(e.target.id==='pickSearch'){ui.pick.q=e.target.value;renderPickList(ui.listId)}});
+document.addEventListener('submit',e=>{
+  if(e.target.dataset.act==='saveRules'){e.preventDefault();const fd=new FormData(e.target);setSettings({owner:fd.get('owner').trim(),staleDays:+fd.get('staleDays')||30,birthdayDays:+fd.get('birthdayDays')||0,anniversaryDays:+fd.get('anniversaryDays')||0,recruitDays:+fd.get('recruitDays')||3});render();toast('規則已儲存')}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+/* ========= 啟動、鎖定、初始設定 ========= */
+function screen(html){$('#app').innerHTML=`<div class="center"><div class="card">${html}</div></div>`}
+function renderOnboarding(){
+  screen(`<h1>🛡 ${APP_NAME}</h1><p class="muted">你的客戶與增員秘書。資料只存在這台裝置和你自己的加密同步檔，不經任何伺服器。</p>
+  <form id="ob"><label class="f"><span class="l">你的稱呼</span><input type="text" name="owner" placeholder="例如：王主任"></label>
+  <label class="f"><span class="l">設定加密密碼（至少 6 碼，請務必記住，忘記無法復原）</span><input type="password" name="p1" required minlength="6"></label>
+  <label class="f"><span class="l">再輸入一次</span><input type="password" name="p2" required></label>
+  <label class="chk"><input type="checkbox" name="remember" checked>在這台裝置記住密碼</label>
+  <button class="btn p" style="width:100%;justify-content:center">開始使用</button></form>
+  <p class="small muted" style="margin-top:14px;text-align:center">已經在別台裝置用過？<a href="#" id="obImport">匯入既有同步檔</a>${googleAvailable()?'<br><a href="#" id="obGoogle">← 改用 Google 帳號登入</a>':''}</p>`);
+  const og=$('#obGoogle');if(og)og.addEventListener('click',e=>{e.preventDefault();renderWelcome()});
+  $('#ob').addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(e.target);if(fd.get('p1')!==fd.get('p2')){alert('兩次密碼不同');return}
+    PASS=fd.get('p1');S=blank();S.settings.owner=fd.get('owner').trim();S.settings.updatedAt=Date.now();
+    if(fd.get('remember'))localStorage.setItem('ss.pass',PASS);await doSave();start()});
+  $('#obImport').addEventListener('click',e=>{e.preventDefault();
+    const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+    inp.onchange=async()=>{const f=inp.files[0];if(!f)return;let pkg;try{pkg=JSON.parse(await f.text())}catch{alert('檔案格式不正確');return}
+      const p=prompt('請輸入這個同步檔的密碼：');if(!p)return;
+      try{S=await decryptObj(pkg,p)}catch{alert('密碼錯誤或檔案損毀');return}
+      PASS=p;if(confirm('要在這台裝置記住密碼嗎？（手機建議不要）'))localStorage.setItem('ss.pass',PASS);await doSave();start();toast('匯入完成')};
+    inp.click()});
+}
+function renderUnlock(blob){
+  screen(`<h1>🛡 ${APP_NAME}</h1><p class="muted">請輸入密碼解鎖</p><form id="ul"><label class="f"><input type="password" name="p" required autofocus placeholder="密碼"></label>
+  <label class="chk"><input type="checkbox" name="remember">在這台裝置記住密碼</label><button class="btn p" style="width:100%;justify-content:center">解鎖</button><p id="ulErr" class="small" style="color:var(--bad)"></p></form>
+  <p class="small muted" style="margin-top:14px;text-align:center">忘記密碼？<a href="#" id="ulReset">清除這台裝置的資料，重新開始</a></p>`);
+  $('#ulReset').addEventListener('click',async e=>{e.preventDefault();if(!confirm('這會刪除這台裝置上的資料（雲端硬碟裡的同步檔不受影響，之後可以再匯入）。確定要重新開始嗎？'))return;
+    try{await kvDel('blob');await kvDel('handle');await kvDel('topicHandle')}catch{}localStorage.removeItem('ss.pass');location.reload()});
+  $('#ul').addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(e.target);const p=fd.get('p');
+    try{S=await decryptObj(blob,p);PASS=p;if(fd.get('remember'))localStorage.setItem('ss.pass',p);start()}catch{$('#ulErr').textContent='密碼錯誤'}});
+}
+async function start(){
+  if(migrate(S))save();
+  render();
+  if(FH){
+    if(await hasPerm(false)){await pullFile(true)}
+    else{const main=document.querySelector('main');if(main)main.insertAdjacentHTML('afterbegin',`<div class="banner">🔗 同步檔「${esc(FH.name)}」需要重新授權才能自動同步。<button class="btn s p" data-act="grantPerm">按一下允許</button></div>`)}
+  }
+  refreshTopic(false);
+  if(MODE==='google')cloudSync();
+}
+async function boot(){
+  if(!window.crypto||!crypto.subtle){screen('<h2>無法啟動</h2><p>這個瀏覽器不支援加密功能，請改用 Chrome、Edge 或 Safari 開啟。</p>');return}
+  let blob;try{blob=await kvGet('blob');FH=(await kvGet('handle'))||null;TH=(await kvGet('topicHandle'))||null}catch(e){screen('<h2>無法啟動</h2><p>瀏覽器不允許儲存資料（可能是無痕模式）。請用一般視窗開啟。</p>');return}
+  if(!blob){renderWelcome();return}
+  if(MODE==='google'){
+    PASS=devKey();
+    try{S=await decryptObj(blob,PASS)}catch(e){screen(`<h2>無法讀取本機資料</h2><p class="muted">這台裝置上的資料無法解開。清除後重新登入 Google，資料會從雲端下載回來。</p><button class="btn p" id="rst" style="width:100%;justify-content:center">清除並重新開始</button>`);$('#rst').onclick=()=>wipeDevice();return}
+    if(localStorage.getItem('ss.pinHash'))renderPinLock();else start();
+    return;
+  }
+  const remembered=localStorage.getItem('ss.pass');
+  if(remembered){try{S=await decryptObj(blob,remembered);PASS=remembered;start();return}catch{localStorage.removeItem('ss.pass')}}
+  renderUnlock(blob);
+}
+boot();
+if(location.protocol==='https:'&&'serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+</script>
+</body>
+</html>
