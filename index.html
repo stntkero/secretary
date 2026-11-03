@@ -702,7 +702,10 @@ function viewSettings(){
       <div class="w"><button class="btn p">儲存規則</button></div>
     </form>
    </div>
-   <div class="card"><h3>今日話題自動帶入</h3>
+   <div class="card"><h3>今日話題（可選）</h3>
+    <p class="small muted">每天的「保險業務破冰時事」。沒有設定來源時首頁不會顯示這個卡片。</p>
+    <label class="chk small"><input type="checkbox" data-act="toggleTopicShow" ${S.settings.topicShow?'checked':''}>在首頁顯示「今日話題」卡片（含手動用 Claude / ChatGPT 產生的按鈕）</label>
+    <h4 style="margin:12px 0 6px">自動帶入</h4>
     <p class="small muted">讓 Codex 或其他工具每天早上把產出寫到固定的檔案或網址，程式開啟時自動讀進首頁，不必再手動貼。讀到的內容會存進同步檔，手機同步後也看得到。檔案第一行建議寫當天日期（例如 2026-11-03），程式會用它判斷是哪一天的話題。</p>
     <h4 style="margin:10px 0 6px">電腦：讀取雲端硬碟資料夾裡的檔案（Chrome / Edge）</h4>
     ${FS_OK?`<div class="row">${TH?`<span class="badge ok">已連結：${esc(TH.name)}</span><button class="btn s" data-act="refreshTopic">立即讀取</button><button class="btn s" data-act="unlinkTopicFile">解除</button>`:`<button class="btn p" data-act="linkTopicFile">連結話題檔（例如 今日話題.md）</button>`}</div>`:'<p class="small muted">這個瀏覽器不支援，請用 Chrome 或 Edge，或改用下面的網址方式。</p>'}
@@ -794,6 +797,7 @@ function topicCard(){
   const t=today(),tp=S.settings.topics||{};let txt=tp[t]||'',label='';
   if(!txt){const ks=Object.keys(tp).filter(k=>tp[k]).sort();if(ks.length){txt=tp[ks[ks.length-1]];label=`<span class="badge warn">顯示 ${fmtDate(ks[ks.length-1])} 的話題，今天的還沒產生</span>`}}
   const q=encodeURIComponent(topicPrompt());const auto=!!(TH||(S.settings.topicUrl||'').trim());
+  if(!txt&&!auto&&!S.settings.topicShow)return ''; // 可選功能：沒有內容、沒有自動來源、也沒打開手動模式就不顯示
   const src=auto?`<div class="small muted" style="margin-bottom:6px">自動來源：${TH?`檔案「${esc(TH.name)}」`:''}${TH&&S.settings.topicUrl?' 與 ':''}${S.settings.topicUrl?'網址':''}${S.settings.topicLastAt?` ・ 上次讀入 ${new Date(S.settings.topicLastAt).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:''} <button class="btn s ghost" data-act="refreshTopic">重新讀取</button>${TH&&!topicPermOK?`<button class="btn s p" data-act="refreshTopic">允許讀取話題檔</button>`:''}</div>`:'';
   return `<div class="card"><h3>今日話題 <span class="small muted" style="font-weight:400">${fmtDate(t,true)}</span></h3>
   ${src}${label?`<div style="margin-bottom:6px">${label}</div>`:''}
@@ -1179,6 +1183,7 @@ document.addEventListener('change',e=>{
     case 'topicText':{const tp=Object.assign({},S.settings.topics||{});tp[today()]=el.value.trim();for(const k of Object.keys(tp))if(daysBetween(k,today())>60)delete tp[k];setSettings({topics:tp});toast('已儲存今日話題');break}
     case 'listStatus':{const it=S.listItems[id];it.status=el.value;if(el.value!=='未撥')it.calledAt=today();put('listItems',it);render();break}
     case 'listNote':{const it=S.listItems[id];it.note=el.value.trim();put('listItems',it);break}
+    case 'toggleTopicShow':setSettings({topicShow:el.checked});toast(el.checked?'首頁會顯示今日話題':'首頁不再顯示今日話題（有自動來源或內容時仍會顯示）');break;
     case 'toggleRemember':if(el.checked)localStorage.setItem('ss.pass',PASS);else localStorage.removeItem('ss.pass');toast(el.checked?'已記住密碼':'已取消記住');break;
   }
 });
