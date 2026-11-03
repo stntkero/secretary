@@ -50,6 +50,13 @@ main{padding:22px 26px 90px;max-width:1240px;width:100%}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .sb{justify-content:space-between}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid2>*,.two>*,.card{min-width:0}
+.md{font-size:14px;line-height:1.65;overflow-wrap:anywhere}
+.md h3,.md h4,.md h5{margin:14px 0 6px;line-height:1.3}.md h3{font-size:17px}.md h4{font-size:15px;color:var(--brand)}.md h5{font-size:14px}
+.md p{margin:6px 0}.md ul,.md ol{margin:6px 0;padding-left:22px}.md li{margin:2px 0}
+.md blockquote{margin:8px 0;padding:6px 12px;border-left:3px solid var(--brand);background:var(--bg);border-radius:6px}
+.md .tw{overflow-x:auto;margin:8px 0}.md table{border-collapse:collapse;font-size:13px;min-width:100%}.md th,.md td{border:1px solid var(--line);padding:4px 8px;text-align:left;white-space:nowrap}.md th{background:var(--bg)}
+.md code{background:var(--bg);padding:1px 5px;border-radius:4px;font-size:13px}.md hr{border:0;border-top:1px solid var(--line);margin:10px 0}.md a{color:var(--brand-2)}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 .kpi .card{margin:0;padding:12px 14px;cursor:pointer}
@@ -793,6 +800,34 @@ async function refreshTopic(force){
     catch(e){if(force)toast('話題網址無法讀取（可能沒有網路，或該網址不允許跨站讀取）')}}
   if(changed){render();toast('今日話題已更新')}else if(force&&(TH||url)){render();toast('話題沒有變化')}
 }
+function mdInline(t){
+  return t.replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener" data-act="ext">$1</a>')
+    .replace(/(^|[^"'>])(https?:\/\/[^\s<)]+)/g,'$1<a href="$2" target="_blank" rel="noopener" data-act="ext">$2</a>');
+}
+function mdHtml(src){
+  const lines=esc(String(src||'')).replace(/\r/g,'').split('\n');
+  if(lines.length&&/^\d{4}-\d{2}-\d{2}\s*$/.test(lines[0]))lines.shift(); // 第一行只有日期就不顯示
+  let out='',i=0,para=[];
+  const flush=()=>{if(para.length){out+=`<p>${mdInline(para.join('<br>'))}</p>`;para=[]}};
+  while(i<lines.length){const l=lines[i];
+    if(/^\s*$/.test(l)){flush();i++;continue}
+    let m;
+    if((m=l.match(/^(#{1,6})\s+(.*)$/))){flush();const lv=m[1].length;const tag=lv<=1?'h3':lv===2?'h4':'h5';out+=`<${tag}>${mdInline(m[2])}</${tag}>`;i++;continue}
+    if(/^\s*(---+|\*\*\*+)\s*$/.test(l)){flush();out+='<hr>';i++;continue}
+    if(/^\s*\|/.test(l)){flush();const rows=[];while(i<lines.length&&/^\s*\|/.test(lines[i])){rows.push(lines[i]);i++}
+      const cells=r=>r.trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+      let body='',hdr=true;
+      for(const r of rows){if(/^\s*\|?\s*:?-{2,}/.test(r)){continue}const cs=cells(r);body+=`<tr>${cs.map(c=>hdr?`<th>${mdInline(c)}</th>`:`<td>${mdInline(c)}</td>`).join('')}</tr>`;hdr=false}
+      out+=`<div class="tw"><table>${body}</table></div>`;continue}
+    if(/^\s*([-*•])\s+/.test(l)){flush();out+='<ul>';while(i<lines.length&&/^\s*([-*•])\s+/.test(lines[i])){out+=`<li>${mdInline(lines[i].replace(/^\s*[-*•]\s+/,''))}</li>`;i++}out+='</ul>';continue}
+    if(/^\s*\d+[.)]\s+/.test(l)){flush();out+='<ol>';while(i<lines.length&&/^\s*\d+[.)]\s+/.test(lines[i])){out+=`<li>${mdInline(lines[i].replace(/^\s*\d+[.)]\s+/,''))}</li>`;i++}out+='</ol>';continue}
+    if(/^\s*&gt;\s?/.test(l)){flush();const q=[];while(i<lines.length&&/^\s*&gt;\s?/.test(lines[i])){q.push(lines[i].replace(/^\s*&gt;\s?/,''));i++}out+=`<blockquote>${mdInline(q.join('<br>'))}</blockquote>`;continue}
+    para.push(l.trim());i++;
+  }
+  flush();return out;
+}
 function topicCard(){
   const t=today(),tp=S.settings.topics||{};let txt=tp[t]||'',label='';
   if(!txt){const ks=Object.keys(tp).filter(k=>tp[k]).sort();if(ks.length){txt=tp[ks[ks.length-1]];label=`<span class="badge warn">顯示 ${fmtDate(ks[ks.length-1])} 的話題，今天的還沒產生</span>`}}
@@ -801,7 +836,7 @@ function topicCard(){
   const src=auto?`<div class="small muted" style="margin-bottom:6px">自動來源：${TH?`檔案「${esc(TH.name)}」`:''}${TH&&S.settings.topicUrl?' 與 ':''}${S.settings.topicUrl?'網址':''}${S.settings.topicLastAt?` ・ 上次讀入 ${new Date(S.settings.topicLastAt).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:''} <button class="btn s ghost" data-act="refreshTopic">重新讀取</button>${TH&&!topicPermOK?`<button class="btn s p" data-act="refreshTopic">允許讀取話題檔</button>`:''}</div>`:'';
   return `<div class="card"><h3>今日話題 <span class="small muted" style="font-weight:400">${fmtDate(t,true)}</span></h3>
   ${src}${label?`<div style="margin-bottom:6px">${label}</div>`:''}
-  ${txt?`<div style="white-space:pre-wrap;max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.6" id="topicView">${esc(txt)}</div>
+  ${txt?`<div class="md" style="max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 14px 10px" id="topicView">${mdHtml(txt)}</div>
   <details style="margin-top:6px"><summary class="small muted" style="cursor:pointer">手動編輯 / 自己產生</summary>`:''}
   <div class="row" style="margin:8px 0"><a class="btn s p" data-act="ext" target="_blank" rel="noopener" href="https://claude.ai/new?q=${q}">用 Claude 產生今日破冰時事</a><a class="btn s" data-act="ext" target="_blank" rel="noopener" href="https://chatgpt.com/?q=${q}">用 ChatGPT 產生</a><button class="btn s" data-act="copyPrompt">複製提示詞</button></div>
   <textarea data-act="topicText" placeholder="${auto?'自動來源會讀進來；也可以在這裡手動貼上或修改。':'按上面的按鈕產生三則話題後貼回這裡（會跟著同步）；或到「設定 → 今日話題自動帶入」讓 Codex 每天自動寫進來。'}" style="min-height:64px">${esc(txt)}</textarea>
