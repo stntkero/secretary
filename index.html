@@ -105,6 +105,7 @@ label.f span.l{display:block;font-size:13px;color:var(--muted);margin-bottom:4px
 .task.cr{border-left-color:#e53935}.task.cy{border-left-color:#f9a825}.task.cg{border-left-color:#43a047}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.swatch{width:28px;height:28px;border-radius:50%;display:inline-block;cursor:pointer;border:3px solid transparent;box-shadow:0 0 0 1px var(--line)}.swatch input{display:none}.swatch:has(input:checked){border-color:var(--card);box-shadow:0 0 0 2px var(--text)}
 .task:first-child{border-top:0}
 .task input{width:20px;height:20px;margin-top:3px;flex:none}
 .task.done .t{text-decoration:line-through;color:var(--muted)}
@@ -774,7 +775,7 @@ function viewSchedule(){
   const html=dates.map(d=>{const cls=d<t?'over':d===t?'today':'';const label=d<t?`逾期 ・ ${fmtDate(d,true)}`:d===t?`今天 ・ ${fmtDate(d,true)}`:`${fmtDate(d,true)}${daysBetween(t,d)<=7?`（${daysBetween(t,d)} 天後）`:''}`;
     return `<div class="daygroup ${cls}"><h4>${label}</h4><div class="card" style="padding:4px 14px">${groups[d].map(taskRow).join('')}</div></div>`}).join('');
   return `<div class="row sb" style="margin-bottom:6px"><h1>行程與待辦</h1><div class="row"><label class="chk small" style="margin:0"><input type="checkbox" data-act="toggleShowDone" ${ui.showDone?'checked':''}>顯示已完成</label><button class="btn" data-act="exportIcs" title="匯出成行事曆檔，可匯入 Google 日曆">📅 匯出行事曆</button><button class="btn p" data-act="addTask">＋ 新增</button></div></div>
-  <div class="legend" style="margin:0 0 8px">${CATS.map(([k])=>`<span>${catDot(k)}${esc(catLabel(k))}</span>`).join('')}<span class="muted">（顏色名稱可在「設定 → 提醒規則」修改）</span></div>
+  <div class="legend" style="margin:0 0 8px">${CATS.map(([k])=>`<span>${catDot(k)}${esc(catLabel(k))}</span>`).join('')}</div>
   ${gcalOn()?'':`<p class="small muted" style="margin:0 0 6px">每筆旁的 📅 可直接加到 Google 日曆；「匯出行事曆」會產生 .ics 檔，含所有未完成事項與客戶生日。</p>`}
   ${dates.length?html:'<div class="card empty">目前沒有行程或待辦</div>'}`;
 }
@@ -1225,7 +1226,7 @@ function taskForm(t,clientId){
     <label class="f"><span class="l">時間（選填）</span><input type="time" name="time" value="${esc(t.time||'')}"></label>
     <label class="f"><span class="l">類型</span><select name="type">${opt(['待辦','行程'],t.type||(t.time?'行程':'待辦'))}</select></label>
     <label class="f"><span class="l">相關客戶</span><select name="clientId"><option value="">（無）</option>${clients.map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
-    <div class="f w"><span class="l">性質（顏色）</span><div class="chips">${CATS.map(([k])=>`<label class="chip"><input type="radio" name="cat" value="${k}" ${(t.cat||(cid?'r':'y'))===k?'checked':''}>${catDot(k)}${esc(catLabel(k))}</label>`).join('')}</div></div>
+    <div class="f"><span class="l">顏色</span><div class="row" style="gap:10px;padding:4px 0">${CATS.map(([k,col])=>`<label class="swatch" style="background:${col}" title="${esc(catLabel(k))}"><input type="radio" name="cat" value="${k}" ${(t.cat||(cid?'r':'y'))===k?'checked':''}></label>`).join('')}</div></div>
     <label class="f w"><span class="l">備註</span><input type="text" name="note" value="${esc(t.note||'')}"></label>
   </div>`;
   modal(t.id?'編輯行程 / 待辦':'新增行程 / 待辦',inner,o=>{
