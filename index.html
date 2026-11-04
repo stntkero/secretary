@@ -164,7 +164,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='2.7';
+const APP_VERSION='2.8';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const THEMES=[["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
@@ -372,7 +372,7 @@ async function writeFile(){
 }
 function setSyncStatus(t){const el=$('#syncStatus');if(el)el.textContent=t}
 window.addEventListener('focus',()=>{if(S&&FH)pullFile(false);if(S)refreshTopic(false);if(S&&MODE==='google')cloudSyncThrottled()});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){if(FH)pullFile(false);refreshTopic(false);if(MODE==='google')cloudSyncThrottled()}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){if(MODE==='google'&&!validTok()&&autoAuthOn()&&silentRefresh(false))return;if(FH)pullFile(false);refreshTopic(false);if(MODE==='google')cloudSyncThrottled()}});
 window.addEventListener('online',()=>{if(S&&MODE==='google')cloudSync()});
 
 /* ========= Google 登入 + 雲端硬碟自動同步 ========= */
@@ -393,7 +393,39 @@ async function requestToken(kind,extra){ // kind: 'select' | 'silent' | 'add'（
     tc.requestAccessToken(o);
   });
 }
-async function getToken(){const t=validTok();if(t)return t;try{return await requestToken('silent')}catch(e){needAuth=true;throw new Error('NOAUTH')}}
+async function getToken(){const t=validTok();if(t)return t;try{return await requestToken('silent')}catch(e){needAuth=true;if(autoAuthOn())silentRefresh(false);throw new Error('NOAUTH')}}
+// ── 開啟時自動續期 ──
+// Google 的存取權杖只有一小時。GIS 彈出視窗沒有使用者按鈕就會被擋，所以改用整頁轉向到 Google（prompt=none）：
+// 有登入中的 Google 帳號就會立刻帶著新權杖轉回來，使用者不用按任何東西。需要先在 Google Cloud 的用戶端加入重新導向 URI。
+function redirectUri(){return location.origin+location.pathname.replace(/index\.html$/,'')}
+function autoAuthOn(){return MODE==='google'&&(localStorage.getItem('ss.autoAuth')==='1'||!!(S&&S.settings&&S.settings.autoAuth))}
+function authUrl(interactive,state){
+  const q=new URLSearchParams({client_id:clientId(),redirect_uri:redirectUri(),response_type:'token',scope:scopes(),include_granted_scopes:'true',state});
+  if(!interactive)q.set('prompt','none');
+  if(GACCT&&GACCT.email)q.set('login_hint',GACCT.email);
+  return 'https://accounts.google.com/o/oauth2/v2/auth?'+q;
+}
+function silentRefresh(interactive){ // interactive=true 表示使用者按了按鈕，允許 Google 顯示選帳號畫面
+  if(MODE!=='google'||!WEB_ORIGIN||!clientId()||!navigator.onLine)return false;
+  if(!interactive){const f=+localStorage.getItem('ss.silentFail')||0;if(Date.now()-f<10*60*1000)return false;if(document.querySelector('.modal'))return false}
+  const state=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  try{sessionStorage.setItem('ss.authState',JSON.stringify({s:state,i:!!interactive,t:Date.now()}))}catch{return false}
+  location.replace(authUrl(interactive,state));return true;
+}
+function consumeAuthHash(){ // 開啟時先看網址 # 後面是不是 Google 轉回來的結果
+  const h=location.hash||'';if(!/(^|[#&])(access_token|error)=/.test(h))return;
+  const p=new URLSearchParams(h.slice(1));let st=null;try{st=JSON.parse(sessionStorage.getItem('ss.authState')||'null')}catch{}
+  try{sessionStorage.removeItem('ss.authState')}catch{}
+  const tok=p.get('access_token');
+  if(tok&&st&&p.get('state')===st.s){
+    GTOK={t:tok,exp:Date.now()+((+p.get('expires_in'))||3600)*1000,scope:p.get('scope')||''};needAuth=false;
+    try{localStorage.setItem('ss.gtok',JSON.stringify(GTOK));localStorage.removeItem('ss.silentFail');localStorage.setItem('ss.autoAuth','1');if(st.i)localStorage.setItem('ss.authJust','1')}catch{}
+  }else{
+    console.warn('Google 自動續期失敗：',p.get('error')||'state 不符');
+    try{localStorage.setItem('ss.silentFail',String(Date.now()))}catch{}
+  }
+  try{history.replaceState(null,'',location.pathname+location.search)}catch{}
+}
 async function gfetch(url,opt={}){
   const tok=await getToken();
   const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({},opt.headers||{},{Authorization:'Bearer '+tok})}));
@@ -458,7 +490,7 @@ async function googleSignIn(){
 }
 async function wipeDevice(){
   try{await kvDel('blob');await kvDel('handle');await kvDel('topicHandle')}catch{}
-  for(const k of ['ss.pass','ss.devkey','ss.gacct','ss.gtok','ss.mode','ss.cloudMod','ss.cloudDirty','ss.pinHash','ss.lastSync'])try{localStorage.removeItem(k)}catch{}
+  for(const k of ['ss.pass','ss.devkey','ss.gacct','ss.gtok','ss.mode','ss.cloudMod','ss.cloudDirty','ss.pinHash','ss.lastSync','ss.autoAuth','ss.silentFail','ss.authJust'])try{localStorage.removeItem(k)}catch{}
   location.reload();
 }
 async function googleSignOut(){
@@ -824,6 +856,10 @@ function syncCard(){
     <p class="small">資料會自動存到這個 Google 帳號雲端硬碟的應用程式專屬區，手機與電腦開啟時自動同步，兩邊各自修改後以每筆資料最後修改時間為準合併。</p>
     <p class="small"><b>這台裝置上次同步：</b>${lastSyncText()} <span id="syncStatus" class="muted"></span></p>
     <div class="row"><button class="btn p" data-act="cloudSyncNow">立即同步</button><button class="btn" data-act="gSignOut">登出</button></div>
+    <h4 style="margin:14px 0 6px">開啟時自動續期</h4>
+    ${autoAuthOn()?`<p class="small muted">已啟用：Google 連線到期時，程式開啟或切回來會自動續期，不用再按「重新連線」。</p><div class="row"><button class="btn s" data-act="autoAuthOff">停用</button></div>`
+    :`<p class="small muted">Google 的連線每小時到期，預設要按一下「重新連線並同步」。啟用後程式會在開啟時自動續期。只需設定一次：到 Google Cloud 的「用戶端」，在「已授權的重新導向 URI」加入 <code>${esc(redirectUri())}</code> 並儲存，等幾分鐘後再按下面的按鈕。</p>
+    <div class="row"><button class="btn s p" data-act="autoAuthOn">測試並啟用</button><button class="btn s ghost" data-act="copyRedirect">複製網址</button></div>`}
     <details style="margin-top:12px"><summary class="small muted" style="cursor:pointer">備份檔（進階）</summary>
       <p class="small muted" style="margin:8px 0">除了雲端自動同步，也可以另外匯出一份用密碼加密的備份檔自行保存；匯入時會與現有資料合併。</p>
       <div class="row"><button class="btn s" data-act="exportShare">分享 / 存備份檔</button><button class="btn s" data-act="exportDownload">下載備份檔</button><button class="btn s" data-act="import">匯入備份檔</button></div></details>
@@ -1370,6 +1406,9 @@ document.addEventListener('click',async e=>{
     case 'switchToGoogle':if(confirm('改用 Google 帳號登入後，資料會自動存到你的 Google 雲端硬碟並同步，原本的同步檔不再使用。要繼續嗎？'))googleSignIn();break;
     case 'gSignOut':googleSignOut();break;
     case 'cloudSyncNow':{const ok=await cloudSync({force:true,push:true,loud:true});if(ok)toast('同步完成');break}
+    case 'autoAuthOn':if(!silentRefresh(true))toast('目前無法連線 Google（沒有網路，或不是從網址開啟）');break;
+    case 'autoAuthOff':setSettings({autoAuth:false});try{localStorage.removeItem('ss.autoAuth')}catch{}render();toast('已停用自動續期');break;
+    case 'copyRedirect':try{await navigator.clipboard.writeText(redirectUri());toast('已複製')}catch{prompt('請複製這個網址',redirectUri())}break;
     case 'gReauth':{let got=false;try{await requestToken('silent');got=true}catch{try{await requestToken('select');got=true}catch(e){toast('連線失敗：'+e.message)}}if(got){needAuth=false;render();cloudSync({force:true,loud:true})}break}
     case 'setPin':pinForm();break;
     case 'gcalEnable':gcalEnable();break;
@@ -1441,7 +1480,9 @@ function renderUnlock(blob){
 }
 async function start(){
   if(migrate(S))save();
+  if(MODE==='google'&&localStorage.getItem('ss.autoAuth')==='1'&&!S.settings.autoAuth)setSettings({autoAuth:true});
   render();
+  if(localStorage.getItem('ss.authJust')==='1'){try{localStorage.removeItem('ss.authJust')}catch{}toast('Google 連線成功，之後開啟程式會自動續期')}
   if(FH){
     if(await hasPerm(false)){await pullFile(true)}
     else{const main=document.querySelector('main');if(main)main.insertAdjacentHTML('afterbegin',`<div class="banner">🔗 同步檔「${esc(FH.name)}」需要重新授權才能自動同步。<button class="btn s p" data-act="grantPerm">按一下允許</button></div>`)}
@@ -1450,13 +1491,14 @@ async function start(){
   if(MODE==='google')cloudSync();
 }
 async function boot(){
-  applyTheme();
+  applyTheme();consumeAuthHash();
   if(!window.crypto||!crypto.subtle){screen('<h2>無法啟動</h2><p>這個瀏覽器不支援加密功能，請改用 Chrome、Edge 或 Safari 開啟。</p>');return}
   let blob;try{blob=await kvGet('blob');FH=(await kvGet('handle'))||null;TH=(await kvGet('topicHandle'))||null}catch(e){screen('<h2>無法啟動</h2><p>瀏覽器不允許儲存資料（可能是無痕模式）。請用一般視窗開啟。</p>');return}
   if(!blob){renderWelcome();return}
   if(MODE==='google'){
     PASS=devKey();
     try{S=await decryptObj(blob,PASS)}catch(e){screen(`<h2>無法讀取本機資料</h2><p class="muted">這台裝置上的資料無法解開。清除後重新登入 Google，資料會從雲端下載回來。</p><button class="btn p" id="rst" style="width:100%;justify-content:center">清除並重新開始</button>`);$('#rst').onclick=()=>wipeDevice();return}
+    if(!validTok()&&autoAuthOn()&&silentRefresh(false))return; // 權杖過期：先去 Google 靜默續期，回來再繼續
     if(localStorage.getItem('ss.pinHash'))renderPinLock();else start();
     return;
   }
