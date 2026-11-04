@@ -164,7 +164,8 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='2.6';
+const APP_VERSION='2.7';
+const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const THEMES=[["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
   let th='blue',ap='auto';try{th=localStorage.getItem('ss.theme')||th;ap=localStorage.getItem('ss.appearance')||ap}catch{}
@@ -880,9 +881,12 @@ function viewSettings(){
     <label class="chk small"><input type="checkbox" data-act="toggleTopicShow" ${S.settings.topicShow?'checked':''}>在首頁顯示「今日話題」卡片（含手動用 Claude / ChatGPT 產生的按鈕）</label>
     <h4 style="margin:12px 0 6px">自動帶入</h4>
     <p class="small muted">讓 Codex 或其他工具每天早上把產出寫到固定的檔案或網址，程式開啟時自動讀進首頁，不必再手動貼。讀到的內容會存進同步檔，手機同步後也看得到。檔案第一行建議寫當天日期（例如 2026-11-03），程式會用它判斷是哪一天的話題。</p>
-    <h4 style="margin:10px 0 6px">電腦：讀取雲端硬碟資料夾裡的檔案（Chrome / Edge）</h4>
+    <h4 style="margin:10px 0 6px">建議：讀取電腦排程發布到網站的話題（手機、電腦都適用）</h4>
+    <p class="small muted">電腦上的排程「業務秘書-今日話題」每天早上產生話題後，會順便發布到 ${esc(SITE_TOPIC_URL)}；任何裝置都能直接讀，不用電腦開著程式。</p>
+    ${(S.settings.topicUrl||'').trim()===SITE_TOPIC_URL?`<span class="badge ok">已使用網站上的今日話題</span>`:`<button class="btn p" data-act="useSiteTopic">使用網站上的今日話題</button>`}
+    <h4 style="margin:12px 0 6px">進階：電腦直接讀取雲端硬碟資料夾裡的檔案（Chrome / Edge）</h4>
     ${FS_OK?`<div class="row">${TH?`<span class="badge ok">已連結：${esc(TH.name)}</span><button class="btn s" data-act="refreshTopic">立即讀取</button><button class="btn s" data-act="unlinkTopicFile">解除</button>`:`<button class="btn p" data-act="linkTopicFile">連結話題檔（例如 今日話題.md）</button>`}</div>`:'<p class="small muted">這個瀏覽器不支援，請用 Chrome 或 Edge，或改用下面的網址方式。</p>'}
-    <h4 style="margin:12px 0 6px">任何裝置：從網址讀取</h4>
+    <h4 style="margin:12px 0 6px">進階：從其他網址讀取</h4>
     <input type="text" data-act="topicUrlText" value="${esc(S.settings.topicUrl||'')}" placeholder="純文字或 JSON 的網址，例如 Google 試算表「檔案 → 共用 → 發布到網路」產生的連結">
     <p class="small muted" style="margin-top:6px">網址內容會公開給知道連結的人，請只放話題，不要放客戶資料。</p>
    </div>
@@ -962,7 +966,7 @@ async function refreshTopic(force){
     if(topicPermOK){const f=await TH.getFile();const {date,text}=parseTopicText(await f.text());if(storeTopic(date||iso(new Date(f.lastModified)),text,'檔案 '+f.name))changed=true}
     else if(force)toast('沒有取得讀取話題檔的權限')}catch(e){console.warn(e);if(force)toast('讀取話題檔失敗：'+e.message)}}
   const url=(S.settings.topicUrl||'').trim();
-  if(url){try{const r=await fetch(url,{cache:'no-store'});if(r.ok){const {date,text}=parseTopicText(await r.text());if(storeTopic(date,text,'網址'))changed=true}else if(force)toast('話題網址讀取失敗：HTTP '+r.status)}
+  if(url){try{const bust=url.startsWith(location.origin)?url+(url.includes('?')?'&':'?')+'_t='+Date.now():url;const r=await fetch(bust,{cache:'no-store'});if(r.ok){const {date,text}=parseTopicText(await r.text());if(storeTopic(date,text,'網址'))changed=true}else if(force)toast('話題網址讀取失敗：HTTP '+r.status)}
     catch(e){if(force)toast('話題網址無法讀取（可能沒有網路，或該網址不允許跨站讀取）')}}
   if(changed){render();toast('今日話題已更新')}else if(force&&(TH||url)){render();toast('話題沒有變化')}
 }
@@ -1336,6 +1340,7 @@ document.addEventListener('click',async e=>{
     case 'copyPrompt':try{await navigator.clipboard.writeText(topicPrompt());toast('已複製，貼到任何 AI 助理即可')}catch{prompt('請手動複製：',topicPrompt())}break;
     case 'importCsv':importCsv();break;
     case 'linkTopicFile':linkTopicFile();break;
+    case 'useSiteTopic':setSettings({topicUrl:SITE_TOPIC_URL});toast('已設定，每次開啟程式會自動讀取網站上的今日話題');refreshTopic(true);break;
     case 'unlinkTopicFile':unlinkTopicFile();break;
     case 'refreshTopic':refreshTopic(true);break;
     case 'resetTopicPrompt':if(confirm('還原成預設的提示詞？你修改過的內容會被覆蓋。')){setSettings({topicPrompt:''});render();toast('已還原')}break;
