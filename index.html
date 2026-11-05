@@ -164,7 +164,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.2';
+const APP_VERSION='3.3';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const THEMES=[["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
@@ -612,7 +612,14 @@ async function gcalSync(opts={}){
     for(const ev of items){
       const ssId=ev.extendedProperties&&ev.extendedProperties.private&&ev.extendedProperties.private.ssId;
       const t=byG[ev.id]||(ssId&&S.tasks[ssId]);const evUp=Date.parse(ev.updated||'')||0;
-      if(ev.status==='cancelled'){if(t&&!t.deleted&&(!t.gcalId||t.gcalId===ev.id)){t.deleted=true;t.updatedAt=Date.now();t.gcalSynced=t.updatedAt;pulled++}continue}
+      if(ev.status==='cancelled'){
+        if(t&&!t.deleted&&t.gcalId===ev.id){ // 程式連結的事件在日曆被取消了
+          let alt=null;try{const f=await (await gfetch(`${base}?${new URLSearchParams({privateExtendedProperty:'ssId='+t.id,maxResults:'10'})}`)).json();alt=(f.items||[]).find(x=>x.status!=='cancelled')||null}catch(e){if(e.message==='NOAUTH')throw e}
+          if(alt){t.gcalId=alt.id;t.gcalUpdated=Date.parse(alt.updated||'')||0;byG[alt.id]=t;pulled++} // 同一筆行程在日曆還有別的事件（例如另一台裝置連到的那個）：接上它，行程不刪
+          else{t.deleted=true;t.deletedBy='gcal';t.updatedAt=Date.now();t.gcalSynced=t.updatedAt;pulled++} // 真的被使用者在日曆刪掉：程式也刪，但保留在「最近刪除」可復原
+        }
+        continue; // 沒連結的行程不因為某個同編號的舊事件被取消而被刪
+      }
       if(t){
         if(t.deleted){await delEv(ev.id);continue} // 程式裡已刪除、日曆上還在：補刪
         if(t.gcalId&&t.gcalId!==ev.id){await delEv(ev.id);continue} // 同一筆行程在日曆多出來的事件（例如同步到一半斷線重建的）：刪掉多的，保留程式連結的那個
@@ -647,7 +654,7 @@ async function gcalSync(opts={}){
   }catch(e){
     if(e.message!=='NOAUTH'){console.warn(e);gcalErr=/calendar-json|has not been used|is disabled/i.test(e.message)?'Google Cloud 專案尚未啟用 Calendar API':e.message;if(opts.loud)toast('日曆同步失敗：'+gcalErr)}
   }finally{
-    gcalBusy=false;
+    gcalBusy=false;if(!ok)gcalLast=0; // 失敗的那次不算在節流裡，下一個觸發點就會重試
     if(pulled||pushed||removed){ // 不管有沒有中途失敗，已經做到的都要存起來，不然下次會再建一次事件
       try{await doSaveLocal();cloudDirty=true;try{localStorage.setItem('ss.cloudDirty','1')}catch{}scheduleCloudSync();render()}catch(e){console.warn(e)}
       if(pulled)toast(`已從 Google 日曆更新 ${pulled} 筆`);if(removed)toast(`已清除 ${removed} 筆重複的日曆事件`);
@@ -907,7 +914,10 @@ function viewSchedule(){
     return `<div class="daygroup ${cls}"><h4>${label}</h4><div class="card" style="padding:4px 14px">${groups[d].map(taskRow).join('')}</div></div>`}).join('');
   return `<div class="row sb" style="margin-bottom:6px"><h1>行程與待辦</h1><div class="row"><label class="chk small" style="margin:0"><input type="checkbox" data-act="toggleShowDone" ${ui.showDone?'checked':''}>顯示已完成</label><button class="btn" data-act="exportIcs" title="匯出成行事曆檔，可匯入 Google 日曆">📅 匯出行事曆</button><button class="btn p" data-act="addTask">＋ 新增</button></div></div>
   ${gcalOn()?'':`<p class="small muted" style="margin:0 0 6px">每筆旁的 📅 可直接加到 Google 日曆；「匯出行事曆」會產生 .ics 檔，含所有未完成事項與客戶生日。</p>`}
-  ${dates.length?html:'<div class="card empty">目前沒有行程或待辦</div>'}`;
+  ${dates.length?html:'<div class="card empty">目前沒有行程或待辦</div>'}
+  ${(()=>{const gone=Object.values(S.tasks).filter(x=>x.deleted&&Date.now()-(x.updatedAt||0)<14*864e5).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,30);
+    return gone.length?`<details class="card" style="margin-top:12px"><summary class="small muted" style="cursor:pointer">最近刪除的行程（14 天內，可復原）：${gone.length} 筆</summary>
+      ${gone.map(x=>`<div class="task"><div style="flex:1"><div>${esc(x.title)}</div><div class="small muted">${fmtDate(x.date)} ${esc(x.time||'')}${x.deletedBy==='gcal'?' ・ 由 Google 日曆同步刪除':''}</div></div><button class="btn s" data-act="restoreTask" data-id="${x.id}">復原</button></div>`).join('')}</details>`:''})()}`;
 }
 
 function syncCard(){
@@ -1125,7 +1135,7 @@ function statsCard(){
 }
 function lastSyncText(){const t=+localStorage.getItem('ss.lastSync')||0;return t?new Date(t).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'尚未同步或匯出過'}
 function markSync(){try{localStorage.setItem('ss.lastSync',String(Date.now()))}catch{}}
-function syncBanner(){if(MODE==='google')return needAuth?`<div class="banner" id="authBanner">🔐 與 Google 的連線已過期，修改暫時只存在這台裝置。<button class="btn s p" data-act="gReauth">重新連線並同步</button></div>`:'';if(FH)return '';const t=+localStorage.getItem('ss.lastSync')||0;const days=t?Math.floor((Date.now()-t)/864e5):null;if(days!==null&&days<3)return '';
+function syncBanner(){if(MODE==='google')return needAuth?`<div class="banner" id="authBanner">🔐 與 Google 的連線已過期，修改暫時只存在這台裝置。<button class="btn s p" data-act="gReauth">重新連線並同步</button><span class="small muted" style="margin-left:8px">不想每次按：設定 → 同步 → 開啟時自動續期</span></div>`:'';if(FH)return '';const t=+localStorage.getItem('ss.lastSync')||0;const days=t?Math.floor((Date.now()-t)/864e5):null;if(days!==null&&days<3)return '';
   return `<div class="banner">💾 ${days===null?'這台裝置還沒有同步或匯出過備份':`已 ${days} 天沒有同步或匯出備份`}，建議現在備份。<button class="btn s" data-act="nav" data-v="settings">去設定同步</button></div>`}
 
 /* ========= 名單匯入 (CSV / Excel 另存 CSV) ========= */
@@ -1413,6 +1423,7 @@ document.addEventListener('click',async e=>{
     case 'delLog':if(confirm('刪除這筆紀錄？')){del('logs',id);closeModal();render()}break;
     case 'addTask':taskForm(null,id);break;
     case 'editTask':taskForm(S.tasks[id]);break;
+    case 'restoreTask':{const x=S.tasks[id];if(x){x.deleted=false;delete x.deletedBy;x.gcalId=null;x.gcalSynced=0;x.updatedAt=Date.now();save();render();toast('已復原，會重新同步到 Google 日曆')}break}
     case 'delTask':if(confirm('刪除這筆待辦？')){del('tasks',id);closeModal();render()}break;
     case 'closeModal':closeModal();break;
     case 'toggleSelect':ui.select=!ui.select;if(!ui.select)ui.selected=new Set();ui.clientId=null;render();break;
@@ -1469,7 +1480,7 @@ document.addEventListener('click',async e=>{
     case 'autoAuthOn':if(!silentRefresh(true))toast('目前無法連線 Google（沒有網路，或不是從網址開啟）');break;
     case 'autoAuthOff':setSettings({autoAuth:false});try{localStorage.removeItem('ss.autoAuth')}catch{}render();toast('已停用自動續期');break;
     case 'copyRedirect':try{await navigator.clipboard.writeText(redirectUri());toast('已複製')}catch{prompt('請複製這個網址',redirectUri())}break;
-    case 'gReauth':{let got=false;try{await requestToken('silent');got=true}catch{try{await requestToken('select');got=true}catch(e){toast('連線失敗：'+e.message)}}if(got){needAuth=false;render();cloudSync({force:true,loud:true})}break}
+    case 'gReauth':{let got=false;try{await requestToken('silent');got=true}catch{try{await requestToken('select');got=true}catch(e){toast('連線失敗：'+e.message)}}if(got){needAuth=false;gcalLast=0;render();cloudSync({force:true,loud:true})}break} // gcalLast 歸零：重新連線後日曆也立刻跟著同步，不被 20 秒節流擋掉
     case 'setPin':pinForm();break;
     case 'gcalEnable':gcalEnable();break;
     case 'gcalDisable':gcalDisable();break;
