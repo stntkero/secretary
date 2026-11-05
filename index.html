@@ -85,7 +85,7 @@ label.f span.l{display:block;font-size:13px;color:var(--muted);margin-bottom:4px
 .chk{display:flex;align-items:center;gap:8px;margin:6px 0 12px;cursor:pointer}
 .chk input{width:18px;height:18px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.sugg{border:1px solid var(--line);border-radius:10px;margin:-4px 0 10px;overflow:hidden;background:var(--card)}
+.sugg{position:fixed;z-index:60;border:1px solid var(--line);border-radius:10px;margin:0;overflow:auto;max-height:260px;background:var(--card);box-shadow:0 10px 30px rgba(0,0,0,.25)} /* 浮在欄位下方，不佔表單空間，視窗高度才不會跟著變 */
 .sugg button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:9px 11px;font:inherit;color:inherit;cursor:pointer}
 .sugg button:first-child{border-top:0}.sugg button:hover,.sugg button:focus{background:rgba(127,127,127,.12)}
 .sugg .t{display:block;font-size:12px;color:var(--muted);margin-top:2px}
@@ -169,7 +169,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.9';
+const APP_VERSION='3.10';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const THEMES=[["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
@@ -1425,10 +1425,18 @@ async function placeMapSuggest(q){ // Photon（OpenStreetMap 資料）：免費�
     const name=p.name||'';const v=name&&addr&&!addr.includes(name)?`${name}, ${addr}`:(addr||name);
     return v?{v,label:p.osm_value&&p.osm_value!=='yes'?p.osm_value.replace(/_/g,' '):'',tag:'地圖'}:null}).filter(Boolean);
 }
+function placePosition(){ // 把清單貼在地點欄位正下方（下方不夠就放上方），跟著視窗捲動與鍵盤開合重算
+  const b=document.getElementById('placeSugg');const inp=document.querySelector('#placeWrap input[name=place]');if(!b||b.hidden||!inp)return;
+  const r=inp.getBoundingClientRect(),vh=window.innerHeight;const below=vh-r.bottom-10,above=r.top-10;
+  b.style.left=r.left+'px';b.style.width=r.width+'px';
+  if(below>=140||below>=above){b.style.top=(r.bottom+4)+'px';b.style.bottom='';b.style.maxHeight=Math.max(80,Math.min(260,below))+'px'}
+  else{b.style.top='';b.style.bottom=(vh-r.top+4)+'px';b.style.maxHeight=Math.max(80,Math.min(260,above))+'px'}
+}
+document.addEventListener('scroll',placePosition,true);window.addEventListener('resize',placePosition);
 function renderPlaceSugg(input){
   const box=document.getElementById('placeSugg');if(!box)return;const q=input.value.trim();const cid=((input.form&&input.form.querySelector('[name=clientId]'))||{}).value||'';
   const items=placeLocalSuggest(q,cid);const seq=++placeSeq;const useMap=q.length>=2&&navigator.onLine;
-  const draw=(list,loading)=>{box.innerHTML=list.map(x=>`<button type="button" data-act="placeSuggPick" data-v="${esc(x.v)}">${esc(x.v)}<span class="t">${esc(x.tag)}${x.label?'・'+esc(x.label):''}</span></button>`).join('')+(loading?'<div class="src">地圖搜尋中…</div>':(useMap?'<div class="src">地圖資料：OpenStreetMap</div>':''));box.hidden=!box.innerHTML};
+  const draw=(list,loading)=>{box.innerHTML=list.map(x=>`<button type="button" data-act="placeSuggPick" data-v="${esc(x.v)}">${esc(x.v)}<span class="t">${esc(x.tag)}${x.label?'・'+esc(x.label):''}</span></button>`).join('')+(loading?'<div class="src">地圖搜尋中…</div>':(useMap?'<div class="src">地圖資料：OpenStreetMap</div>':''));box.hidden=!box.innerHTML;placePosition()};
   draw(items,useMap);clearTimeout(placeTimer);
   if(useMap)placeTimer=setTimeout(async()=>{let m=[];try{m=await placeMapSuggest(q)}catch{}if(seq!==placeSeq||!document.getElementById('placeSugg'))return;const seen=new Set(items.map(x=>x.v));draw(items.concat(m.filter(x=>!seen.has(x.v))),false)},450);
 }
