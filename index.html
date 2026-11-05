@@ -199,6 +199,57 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 .fab{background:var(--card);color:var(--brand);border:2px solid var(--brand);box-shadow:3px 3px 0 var(--brand)}
 .actions{background:var(--card)}
 @media (prefers-reduced-motion:reduce){.btn{transition:none}.btn:active{transform:none}}
+/* ===== 膠卷噪點主題（motion noise grain）：暗房色調、米白字、琥珀色強調；頂層一層會動的膠卷顆粒，背景緩慢換色呼吸；固定深色 ===== */
+:root[data-theme="grain"]{--bg:#1a1410;--card:#241b14;--text:#f5f0e8;--muted:#87807a;--line:rgba(245,240,232,.12);--fill:rgba(245,240,232,.05);--fill2:rgba(245,240,232,.09);--fill3:rgba(245,240,232,.14);
+  --brand:#fbbf24;--brand-2:#fbbf24;--ok:#4ade80;--warn:#fb923c;--bad:#f43f5e;--sale:#fbbf24;--recruit:#c084fc;--r:12px;--shadow:0 10px 30px rgba(0,0,0,.35);--ink:#1a1410;color-scheme:dark}
+:root[data-theme="grain"] body{background:transparent;position:relative;z-index:0}
+:root[data-theme="grain"] body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(1200px 700px at 15% -10%,rgba(251,191,36,.13),transparent 60%),radial-gradient(900px 600px at 105% 105%,rgba(244,63,94,.09),transparent 60%),linear-gradient(180deg,#1a1410,#221a13);animation:ss-hue 45s linear infinite}
+:root[data-theme="grain"] body::after{content:'';position:fixed;inset:0;z-index:1000;pointer-events:none;opacity:.12;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='5'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");animation:ss-noise 1.5s steps(8) infinite}
+@keyframes ss-noise{0%{background-position:0 0}20%{background-position:-20px 10px}40%{background-position:30px -15px}60%{background-position:-10px 25px}80%{background-position:20px -20px}100%{background-position:0 0}}
+@keyframes ss-hue{0%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(8deg)}100%{filter:hue-rotate(0deg)}}
+:root[data-theme="grain"] a{color:var(--brand);text-decoration:none}:root[data-theme="grain"] a:hover{text-decoration:underline}
+:root[data-theme="grain"] h1,:root[data-theme="grain"] h2{letter-spacing:-.01em}
+:root[data-theme="grain"] label.f span.l,:root[data-theme="grain"] .kpi .l,:root[data-theme="grain"] .kv .k,:root[data-theme="grain"] .stat .h,:root[data-theme="grain"] .legend{letter-spacing:.06em}
+:root[data-theme="grain"] .side{background:rgba(0,0,0,.28);color:var(--text);border-right:1px solid var(--line)}
+:root[data-theme="grain"] .side .logo{color:var(--text);letter-spacing:.04em}:root[data-theme="grain"] .side .logo::after{content:none}
+:root[data-theme="grain"] .side nav button{color:var(--muted);border:1px solid transparent;border-radius:10px}
+:root[data-theme="grain"] .side nav button:hover{background:var(--fill2);color:var(--text)}
+:root[data-theme="grain"] .side nav button.on{background:rgba(251,191,36,.12);color:var(--brand);border:1px solid rgba(251,191,36,.35);font-weight:600}
+:root[data-theme="grain"] .side .foot{color:var(--muted)}
+:root[data-theme="grain"] .card{background:linear-gradient(180deg,rgba(245,240,232,.035),rgba(245,240,232,0) 60%),var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+:root[data-theme="grain"] .card h3{justify-content:space-between}:root[data-theme="grain"] .card h3::before{content:none}
+:root[data-theme="grain"] .kpi .card:hover{background:var(--fill2);border-color:rgba(251,191,36,.35)}
+:root[data-theme="grain"] .badge{background:color-mix(in srgb,currentColor 14%,transparent);border:1px solid color-mix(in srgb,currentColor 25%,transparent);border-radius:999px;font-weight:600}
+:root[data-theme="grain"] .badge.sale,:root[data-theme="grain"] .badge.recruit,:root[data-theme="grain"] .badge.warn,:root[data-theme="grain"] .badge.bad,:root[data-theme="grain"] .badge.ok,:root[data-theme="grain"] .badge.gray{background:color-mix(in srgb,currentColor 14%,transparent);border-color:color-mix(in srgb,currentColor 25%,transparent)}
+:root[data-theme="grain"] .btn{border:1px solid var(--line);background:var(--fill);color:var(--text);border-radius:999px;transition:transform 120ms,background 120ms,border-color 120ms}
+:root[data-theme="grain"] .btn:hover{border-color:rgba(251,191,36,.6);background:var(--fill2)}
+:root[data-theme="grain"] .btn:active{background:var(--fill3);transform:translateY(1px)}
+:root[data-theme="grain"] .btn.p{background:var(--brand);border:1px solid var(--brand);color:var(--ink);font-weight:700}
+:root[data-theme="grain"] .btn.p:hover{background:#fcd34d;border-color:#fcd34d}
+:root[data-theme="grain"] .btn.ghost{border:1px solid transparent;background:transparent;color:var(--brand)}
+:root[data-theme="grain"] .btn.d{color:var(--bad);border:1px solid rgba(244,63,94,.4);background:rgba(244,63,94,.06)}
+:root[data-theme="grain"] .item{border-top:1px solid var(--line)}:root[data-theme="grain"] .item:hover{background:var(--fill)}
+:root[data-theme="grain"] .avatar{background:rgba(251,191,36,.14);background-image:none;border:1px solid rgba(251,191,36,.25);color:var(--brand)}
+:root[data-theme="grain"] .empty{border:1px dashed var(--line);border-radius:12px}
+:root[data-theme="grain"] input[type=text],:root[data-theme="grain"] input[type=search],:root[data-theme="grain"] input[type=date],:root[data-theme="grain"] input[type=time],:root[data-theme="grain"] input[type=number],:root[data-theme="grain"] input[type=password],:root[data-theme="grain"] input[type=email],:root[data-theme="grain"] input[type=tel],:root[data-theme="grain"] select,:root[data-theme="grain"] textarea{border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.28);color:var(--text)}
+:root[data-theme="grain"] input:focus,:root[data-theme="grain"] select:focus,:root[data-theme="grain"] textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(251,191,36,.18)}
+:root[data-theme="grain"] select option{background:#241b14;color:var(--text)}
+:root[data-theme="grain"] .chip{border:1px solid var(--line);background:var(--fill);color:var(--muted);border-radius:999px}
+:root[data-theme="grain"] .chip.on,:root[data-theme="grain"] .chip:has(input:checked){background:var(--brand);border:1px solid var(--brand);color:var(--ink);font-weight:600}
+:root[data-theme="grain"] .modal{background:rgba(10,6,3,.6);backdrop-filter:blur(3px)}:root[data-theme="grain"] .modal .box{background:#241b14;border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+:root[data-theme="grain"] .toast{background:#f5f0e8;color:var(--ink);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+:root[data-theme="grain"] .banner{background:rgba(251,146,60,.12);color:var(--text);border:1px solid rgba(251,146,60,.4);border-radius:12px}
+:root[data-theme="grain"] .log{border-left:2px solid var(--line)}:root[data-theme="grain"] .log.survey{border-left:2px solid var(--warn)}
+:root[data-theme="grain"] .ob{background:var(--fill);border:1px solid var(--line);border-radius:8px;color:var(--text)}
+:root[data-theme="grain"] .md blockquote{background:var(--fill);border-left-color:var(--brand);border-radius:8px}:root[data-theme="grain"] .md th{background:var(--fill)}:root[data-theme="grain"] .md code{background:var(--fill2)}
+:root[data-theme="grain"] .task{border-top:1px solid var(--line)}
+:root[data-theme="grain"] .sugg{background:#241b14;border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,.5)}:root[data-theme="grain"] .sugg button:hover,:root[data-theme="grain"] .sugg button:focus{background:var(--fill2)}
+:root[data-theme="grain"] .tabbar{background:rgba(26,20,16,.88);backdrop-filter:blur(12px);border-top:1px solid var(--line)}:root[data-theme="grain"] .tabbar button{color:var(--muted)}:root[data-theme="grain"] .tabbar button.on{color:var(--brand);border-top:0;margin-top:0}
+:root[data-theme="grain"] .fab{background:var(--brand);color:var(--ink);border:0;box-shadow:0 10px 30px rgba(251,191,36,.35)}
+:root[data-theme="grain"] .actions{background:#241b14}
+:root[data-theme="grain"] .swatch:has(input:checked){border-color:#241b14;box-shadow:0 0 0 2px var(--brand)}
+@media (max-width:860px){:root[data-theme="grain"] .modal .box{border-radius:20px 20px 0 0}}
+@media (prefers-reduced-motion:reduce){:root[data-theme="grain"] body::before,:root[data-theme="grain"] body::after{animation:none}:root[data-theme="grain"] .btn{transition:none}:root[data-theme="grain"] .btn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -207,24 +258,25 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.13';
+const APP_VERSION='3.14';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
-const THEMES=[["wire", "線框稿", "#ffffff"], ["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
+const THEMES=[["wire", "線框稿", "#ffffff"], ["grain", "膠卷噪點", "#1a1410"], ["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
   let th='wire',ap='auto';try{th=localStorage.getItem('ss.theme')||th;ap=localStorage.getItem('ss.appearance')||ap}catch{}
   if(S&&S.settings){th=S.settings.theme||th;ap=S.settings.appearance||ap}
   if(!THEMES.some(x=>x[0]===th))th='wire';
   const r=document.documentElement;r.dataset.theme=th;if(ap==='dark')r.dataset.dark='1';else if(ap==='light')r.dataset.dark='0';else delete r.dataset.dark;
+  if(th==='grain')r.dataset.dark='1'; // 膠卷噪點是暗房風格，固定深色
   try{localStorage.setItem('ss.theme',th);localStorage.setItem('ss.appearance',ap)}catch{}
-  const m=document.querySelector('meta[name=theme-color]');if(m){const t=THEMES.find(x=>x[0]===th);const dark=r.dataset.dark==='1'||(r.dataset.dark!=='0'&&matchMedia('(prefers-color-scheme: dark)').matches);m.content=dark?'#141414':'#ffffff'}
+  const m=document.querySelector('meta[name=theme-color]');if(m){const t=THEMES.find(x=>x[0]===th);const dark=r.dataset.dark==='1'||(r.dataset.dark!=='0'&&matchMedia('(prefers-color-scheme: dark)').matches);m.content=th==='grain'?'#1a1410':(dark?'#141414':'#ffffff')}
 }
 function themeCard(){
   const th=S.settings.theme||'blue',ap=S.settings.appearance||'auto';
   return `<div class="card"><h3>外觀</h3>
     <div class="small muted" style="margin-bottom:6px">主題色</div>
-    <div class="row" style="gap:10px;flex-wrap:wrap">${THEMES.map(([k,n,c])=>`<label class="swatch" style="${k==='wire'?'background:#f0f0f0;background-image:linear-gradient(to top right,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px)),linear-gradient(to top left,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px))':'background:'+c}" title="${n}"><input type="radio" name="themePick" data-act="themePick" value="${k}" ${th===k?'checked':''}></label>`).join('')}</div>
+    <div class="row" style="gap:10px;flex-wrap:wrap">${THEMES.map(([k,n,c])=>`<label class="swatch" style="${k==='wire'?'background:#f0f0f0;background-image:linear-gradient(to top right,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px)),linear-gradient(to top left,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px))':k==='grain'?'background:radial-gradient(circle at 38% 38%,#fbbf24 0 30%,#1a1410 32%)':'background:'+c}" title="${n}"><input type="radio" name="themePick" data-act="themePick" value="${k}" ${th===k?'checked':''}></label>`).join('')}</div>
     <div class="row" style="margin-top:12px;gap:10px;align-items:center"><span class="small muted">深淺色</span><select data-act="appearancePick" style="width:auto"><option value="auto" ${ap==='auto'?'selected':''}>跟隨系統</option><option value="light" ${ap==='light'?'selected':''}>淺色</option><option value="dark" ${ap==='dark'?'selected':''}>深色</option></select></div>
-    <p class="small muted" style="margin-top:8px">設定會跟著同步，手機和電腦一致。整個程式都是線框設計稿的語彙（細線框、虛線分隔、打叉頭像），這裡選的只是強調色：第一個「線框稿」是純灰階，其他是帶顏色的強調線；行程紅黃綠、客戶分級、狀態標籤的顏色都保留。</p>
+    <p class="small muted" style="margin-top:8px">設定會跟著同步，手機和電腦一致。第一個「線框稿」與其他顏色都是線框設計稿的語彙（細線框、虛線分隔、打叉頭像），選的只是強調色。第二個「膠卷噪點」是另一種風格：暗房色調、琥珀色強調、畫面上一層會動的膠卷顆粒，固定深色（深淺色設定對它無效）。行程紅黃綠、客戶分級、狀態標籤的顏色都保留。</p>
    </div>`;
 }
 const GOOGLE_CLIENT_ID='615249101814-ogv3iv1jktag6hueptfakj37l1pejfuh.apps.googleusercontent.com';  // 管理者填入 Google OAuth「網頁應用程式」用戶端 ID；留空則只能離線使用
