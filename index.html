@@ -164,7 +164,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.1';
+const APP_VERSION='3.2';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const THEMES=[["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
@@ -668,12 +668,27 @@ function gcalDisable(){
   if(!confirm('解除連動後，程式不再與 Google 日曆同步。日曆裡已有的事件會保留，不需要時可在 Google 日曆自行刪除整個「業務秘書」日曆。確定解除？'))return;
   setSettings({gcal:Object.assign({},S.settings.gcal||{},{enabled:false})});render();toast('已解除 Google 日曆連動');
 }
+async function gcalInspect(){
+  if(!gcalOn())return;toast('檢查中…');
+  try{
+    const calId=await gcalEnsureCalendar();const base=`${CAL_API}/calendars/${encodeURIComponent(calId)}/events`;
+    const q=new URLSearchParams({maxResults:'250',singleEvents:'true',orderBy:'startTime',timeMin:new Date(Date.now()-30*864e5).toISOString(),timeMax:new Date(Date.now()+60*864e5).toISOString()});
+    const items=(await (await gfetch(`${base}?${q}`)).json()).items||[];
+    const byG={};for(const t of Object.values(S.tasks))if(t.gcalId)byG[t.gcalId]=t;
+    const lines=items.map(ev=>{
+      const ssId=ev.extendedProperties&&ev.extendedProperties.private&&ev.extendedProperties.private.ssId;const owner=byG[ev.id];const byId=ssId&&S.tasks[ssId];
+      const st=owner?(owner.deleted?'連結到已刪除的行程':'已連結'):byId?(byId.deleted?'對應的行程已刪除':byId.gcalId?'重複：行程連到別的事件':'行程尚未連結'):ssId?'找不到對應的行程':'沒有程式標記（不是這個程式建的）';
+      const d=((ev.start&&(ev.start.dateTime||ev.start.date))||'').slice(0,16).replace('T',' ');return `${d}　${ev.summary||'（無標題）'}\n　→ ${st}`;
+    });
+    alert(`日曆「${CAL_NAME}」（編號 ${calId.slice(0,10)}…）\n30 天前到 60 天後共 ${items.length} 筆事件\n\n${lines.join('\n')||'（沒有事件）'}\n\n若 Google 日曆裡看到的事件比這裡多，多出來的在另一個同名日曆裡，不是這個程式正在同步的日曆。`);
+  }catch(e){alert('檢查失敗：'+e.message)}
+}
 function gcalCard(){
   if(MODE!=='google')return '';const g=S.settings.gcal||{};const on=!!(g.enabled&&g.calendarId);const last=+localStorage.getItem('ss.gcalLastAt')||0;
   return `<div class="card"><h3>Google 日曆連動</h3>
     <p class="small muted">在你的 Google 日曆建立一個「${CAL_NAME}」日曆，程式裡的行程與待辦會出現在那裡；在 Google 日曆 App 改時間、改內容或刪除，也會同步回程式。只碰這個日曆，不碰你其他的行程。</p>
     ${on?`<p class="small"><span class="badge ok">已連動</span> 上次同步：${last?new Date(last).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'尚未'}${gcalErr?` <span style="color:var(--bad)">（${esc(gcalErr)}）</span>`:''}${localStorage.getItem('ss.gcalLastInfo')?`<br><span class="muted">${esc(localStorage.getItem('ss.gcalLastInfo'))}</span>`:''}</p>
-      <div class="row"><button class="btn" data-act="gcalSyncNow">立即同步</button><button class="btn" data-act="gcalDisable">解除連動</button></div>`
+      <div class="row"><button class="btn" data-act="gcalSyncNow">立即同步</button><button class="btn s" data-act="gcalInspect">檢查日曆事件</button><button class="btn" data-act="gcalDisable">解除連動</button></div>`
     :`<div class="row"><button class="btn p" data-act="gcalEnable">連動 Google 日曆</button></div><p class="small muted" style="margin-top:6px">第一次會請你允許「建立次要日曆並管理其中的活動」這一項權限。</p>`}
    </div>`;
 }
@@ -1458,6 +1473,7 @@ document.addEventListener('click',async e=>{
     case 'setPin':pinForm();break;
     case 'gcalEnable':gcalEnable();break;
     case 'gcalDisable':gcalDisable();break;
+    case 'gcalInspect':gcalInspect();break;
     case 'gcalSyncNow':{toast('同步中…');const ok=await gcalSync({loud:true});render();if(ok)toast('日曆同步完成')}break;
     case 'removePin':if(confirm('移除開啟 PIN？')){localStorage.removeItem('ss.pinHash');render();toast('已移除 PIN')}break;
   }
