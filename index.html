@@ -199,55 +199,56 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 .fab{background:var(--card);color:var(--brand);border:2px solid var(--brand);box-shadow:3px 3px 0 var(--brand)}
 .actions{background:var(--card)}
 @media (prefers-reduced-motion:reduce){.btn{transition:none}.btn:active{transform:none}}
-/* ===== 膠卷噪點主題（motion noise grain）：暗房色調、米白字、琥珀色強調；頂層一層會動的膠卷顆粒，背景緩慢換色呼吸；固定深色 ===== */
-:root[data-theme="grain"]{--bg:#1a1410;--card:#241b14;--text:#f5f0e8;--muted:#87807a;--line:rgba(245,240,232,.12);--fill:rgba(245,240,232,.05);--fill2:rgba(245,240,232,.09);--fill3:rgba(245,240,232,.14);
-  --brand:#fbbf24;--brand-2:#fbbf24;--ok:#4ade80;--warn:#fb923c;--bad:#f43f5e;--sale:#fbbf24;--recruit:#c084fc;--r:12px;--shadow:0 10px 30px rgba(0,0,0,.35);--ink:#1a1410;color-scheme:dark}
+/* ===== 膠卷噪點主題（motion noise grain）：琥珀色強調、圓角卡片；頂層一層會動的膠卷顆粒，背景緩慢換色呼吸。淺色＝米紙，深色＝暗房；跟著深淺色設定 ===== */
+:root[data-theme="grain"]{--bg:#f4eee4;--card:#fbf8f2;--panel:#fbf8f2;--text:#241b14;--muted:#7d7266;--line:rgba(36,27,20,.14);--fill:rgba(36,27,20,.045);--fill2:rgba(36,27,20,.08);--fill3:rgba(36,27,20,.13);--brand:#d97706;--brand-2:#b45309;--ok:#15803d;--warn:#c2410c;--bad:#be123c;--sale:#b45309;--recruit:#7e22ce;--r:12px;--ink:#1a1410;--shadow:0 8px 24px rgba(60,40,20,.10);--card-hi:rgba(255,255,255,.6);--side-bg:rgba(255,255,255,.45);--input-bg:#fff;--tabbar-bg:rgba(244,238,228,.9);--modal-bg:rgba(60,40,20,.35);--noise-op:.09;--noise-blend:multiply;--glow:radial-gradient(1200px 700px at 15% -10%,rgba(217,119,6,.14),transparent 60%),radial-gradient(900px 600px at 105% 105%,rgba(190,18,60,.07),transparent 60%),linear-gradient(180deg,#f4eee4,#efe6d8);color-scheme:light}
+@media (prefers-color-scheme:dark){:root[data-theme="grain"]:not([data-dark="0"]){--bg:#1a1410;--card:#241b14;--panel:#241b14;--text:#f5f0e8;--muted:#87807a;--line:rgba(245,240,232,.12);--fill:rgba(245,240,232,.05);--fill2:rgba(245,240,232,.09);--fill3:rgba(245,240,232,.14);--brand:#fbbf24;--brand-2:#fbbf24;--ok:#4ade80;--warn:#fb923c;--bad:#f43f5e;--sale:#fbbf24;--recruit:#c084fc;--shadow:0 10px 30px rgba(0,0,0,.35);--card-hi:rgba(245,240,232,.035);--side-bg:rgba(0,0,0,.28);--input-bg:rgba(0,0,0,.28);--tabbar-bg:rgba(26,20,16,.88);--modal-bg:rgba(10,6,3,.6);--noise-op:.12;--noise-blend:overlay;--glow:radial-gradient(1200px 700px at 15% -10%,rgba(251,191,36,.13),transparent 60%),radial-gradient(900px 600px at 105% 105%,rgba(244,63,94,.09),transparent 60%),linear-gradient(180deg,#1a1410,#221a13);color-scheme:dark}}
+:root[data-theme="grain"][data-dark="1"]{--bg:#1a1410;--card:#241b14;--panel:#241b14;--text:#f5f0e8;--muted:#87807a;--line:rgba(245,240,232,.12);--fill:rgba(245,240,232,.05);--fill2:rgba(245,240,232,.09);--fill3:rgba(245,240,232,.14);--brand:#fbbf24;--brand-2:#fbbf24;--ok:#4ade80;--warn:#fb923c;--bad:#f43f5e;--sale:#fbbf24;--recruit:#c084fc;--shadow:0 10px 30px rgba(0,0,0,.35);--card-hi:rgba(245,240,232,.035);--side-bg:rgba(0,0,0,.28);--input-bg:rgba(0,0,0,.28);--tabbar-bg:rgba(26,20,16,.88);--modal-bg:rgba(10,6,3,.6);--noise-op:.12;--noise-blend:overlay;--glow:radial-gradient(1200px 700px at 15% -10%,rgba(251,191,36,.13),transparent 60%),radial-gradient(900px 600px at 105% 105%,rgba(244,63,94,.09),transparent 60%),linear-gradient(180deg,#1a1410,#221a13);color-scheme:dark}
 :root[data-theme="grain"] body{background:transparent;position:relative;z-index:0}
-:root[data-theme="grain"] body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(1200px 700px at 15% -10%,rgba(251,191,36,.13),transparent 60%),radial-gradient(900px 600px at 105% 105%,rgba(244,63,94,.09),transparent 60%),linear-gradient(180deg,#1a1410,#221a13);animation:ss-hue 45s linear infinite}
-:root[data-theme="grain"] body::after{content:'';position:fixed;inset:0;z-index:1000;pointer-events:none;opacity:.12;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='5'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");animation:ss-noise 1.5s steps(8) infinite}
+:root[data-theme="grain"] body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--glow);animation:ss-hue 45s linear infinite}
+:root[data-theme="grain"] body::after{content:'';position:fixed;inset:0;z-index:1000;pointer-events:none;opacity:var(--noise-op);mix-blend-mode:var(--noise-blend);background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='5'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");animation:ss-noise 1.5s steps(8) infinite}
 @keyframes ss-noise{0%{background-position:0 0}20%{background-position:-20px 10px}40%{background-position:30px -15px}60%{background-position:-10px 25px}80%{background-position:20px -20px}100%{background-position:0 0}}
 @keyframes ss-hue{0%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(8deg)}100%{filter:hue-rotate(0deg)}}
-:root[data-theme="grain"] a{color:var(--brand);text-decoration:none}:root[data-theme="grain"] a:hover{text-decoration:underline}
+:root[data-theme="grain"] a{color:var(--brand-2);text-decoration:none}:root[data-theme="grain"] a:hover{text-decoration:underline}
 :root[data-theme="grain"] h1,:root[data-theme="grain"] h2{letter-spacing:-.01em}
 :root[data-theme="grain"] label.f span.l,:root[data-theme="grain"] .kpi .l,:root[data-theme="grain"] .kv .k,:root[data-theme="grain"] .stat .h,:root[data-theme="grain"] .legend{letter-spacing:.06em}
-:root[data-theme="grain"] .side{background:rgba(0,0,0,.28);color:var(--text);border-right:1px solid var(--line)}
+:root[data-theme="grain"] .side{background:var(--side-bg);color:var(--text);border-right:1px solid var(--line)}
 :root[data-theme="grain"] .side .logo{color:var(--text);letter-spacing:.04em}:root[data-theme="grain"] .side .logo::after{content:none}
 :root[data-theme="grain"] .side nav button{color:var(--muted);border:1px solid transparent;border-radius:10px}
 :root[data-theme="grain"] .side nav button:hover{background:var(--fill2);color:var(--text)}
-:root[data-theme="grain"] .side nav button.on{background:rgba(251,191,36,.12);color:var(--brand);border:1px solid rgba(251,191,36,.35);font-weight:600}
+:root[data-theme="grain"] .side nav button.on{background:color-mix(in srgb,var(--brand) 13%,transparent);color:var(--brand-2);border:1px solid color-mix(in srgb,var(--brand) 40%,transparent);font-weight:600}
 :root[data-theme="grain"] .side .foot{color:var(--muted)}
-:root[data-theme="grain"] .card{background:linear-gradient(180deg,rgba(245,240,232,.035),rgba(245,240,232,0) 60%),var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+:root[data-theme="grain"] .card{background:linear-gradient(180deg,var(--card-hi),transparent 60%),var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
 :root[data-theme="grain"] .card h3{justify-content:space-between}:root[data-theme="grain"] .card h3::before{content:none}
-:root[data-theme="grain"] .kpi .card:hover{background:var(--fill2);border-color:rgba(251,191,36,.35)}
-:root[data-theme="grain"] .badge{background:color-mix(in srgb,currentColor 14%,transparent);border:1px solid color-mix(in srgb,currentColor 25%,transparent);border-radius:999px;font-weight:600}
+:root[data-theme="grain"] .kpi .card:hover{background:var(--fill2);border-color:color-mix(in srgb,var(--brand) 40%,transparent)}
+:root[data-theme="grain"] .badge{background:color-mix(in srgb,currentColor 14%,transparent);border:1px solid color-mix(in srgb,currentColor 25%,transparent);color:var(--brand-2);border-radius:999px;font-weight:600}
 :root[data-theme="grain"] .badge.sale,:root[data-theme="grain"] .badge.recruit,:root[data-theme="grain"] .badge.warn,:root[data-theme="grain"] .badge.bad,:root[data-theme="grain"] .badge.ok,:root[data-theme="grain"] .badge.gray{background:color-mix(in srgb,currentColor 14%,transparent);border-color:color-mix(in srgb,currentColor 25%,transparent)}
 :root[data-theme="grain"] .btn{border:1px solid var(--line);background:var(--fill);color:var(--text);border-radius:999px;transition:transform 120ms,background 120ms,border-color 120ms}
-:root[data-theme="grain"] .btn:hover{border-color:rgba(251,191,36,.6);background:var(--fill2)}
+:root[data-theme="grain"] .btn:hover{border-color:color-mix(in srgb,var(--brand) 60%,transparent);background:var(--fill2)}
 :root[data-theme="grain"] .btn:active{background:var(--fill3);transform:translateY(1px)}
 :root[data-theme="grain"] .btn.p{background:var(--brand);border:1px solid var(--brand);color:var(--ink);font-weight:700}
-:root[data-theme="grain"] .btn.p:hover{background:#fcd34d;border-color:#fcd34d}
-:root[data-theme="grain"] .btn.ghost{border:1px solid transparent;background:transparent;color:var(--brand)}
-:root[data-theme="grain"] .btn.d{color:var(--bad);border:1px solid rgba(244,63,94,.4);background:rgba(244,63,94,.06)}
+:root[data-theme="grain"] .btn.p:hover{background:color-mix(in srgb,var(--brand) 85%,#fff);border-color:color-mix(in srgb,var(--brand) 85%,#fff)}
+:root[data-theme="grain"] .btn.ghost{border:1px solid transparent;background:transparent;color:var(--brand-2)}
+:root[data-theme="grain"] .btn.d{color:var(--bad);border:1px solid color-mix(in srgb,var(--bad) 40%,transparent);background:color-mix(in srgb,var(--bad) 6%,transparent)}
 :root[data-theme="grain"] .item{border-top:1px solid var(--line)}:root[data-theme="grain"] .item:hover{background:var(--fill)}
-:root[data-theme="grain"] .avatar{background:rgba(251,191,36,.14);background-image:none;border:1px solid rgba(251,191,36,.25);color:var(--brand)}
+:root[data-theme="grain"] .avatar{background:color-mix(in srgb,var(--brand) 14%,transparent);background-image:none;border:1px solid color-mix(in srgb,var(--brand) 25%,transparent);color:var(--brand-2)}
 :root[data-theme="grain"] .empty{border:1px dashed var(--line);border-radius:12px}
-:root[data-theme="grain"] input[type=text],:root[data-theme="grain"] input[type=search],:root[data-theme="grain"] input[type=date],:root[data-theme="grain"] input[type=time],:root[data-theme="grain"] input[type=number],:root[data-theme="grain"] input[type=password],:root[data-theme="grain"] input[type=email],:root[data-theme="grain"] input[type=tel],:root[data-theme="grain"] select,:root[data-theme="grain"] textarea{border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.28);color:var(--text)}
-:root[data-theme="grain"] input:focus,:root[data-theme="grain"] select:focus,:root[data-theme="grain"] textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(251,191,36,.18)}
-:root[data-theme="grain"] select option{background:#241b14;color:var(--text)}
+:root[data-theme="grain"] input[type=text],:root[data-theme="grain"] input[type=search],:root[data-theme="grain"] input[type=date],:root[data-theme="grain"] input[type=time],:root[data-theme="grain"] input[type=number],:root[data-theme="grain"] input[type=password],:root[data-theme="grain"] input[type=email],:root[data-theme="grain"] input[type=tel],:root[data-theme="grain"] select,:root[data-theme="grain"] textarea{border:1px solid var(--line);border-radius:8px;background:var(--input-bg);color:var(--text)}
+:root[data-theme="grain"] input:focus,:root[data-theme="grain"] select:focus,:root[data-theme="grain"] textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+:root[data-theme="grain"] select option{background:var(--panel);color:var(--text)}
 :root[data-theme="grain"] .chip{border:1px solid var(--line);background:var(--fill);color:var(--muted);border-radius:999px}
 :root[data-theme="grain"] .chip.on,:root[data-theme="grain"] .chip:has(input:checked){background:var(--brand);border:1px solid var(--brand);color:var(--ink);font-weight:600}
-:root[data-theme="grain"] .modal{background:rgba(10,6,3,.6);backdrop-filter:blur(3px)}:root[data-theme="grain"] .modal .box{background:#241b14;border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
-:root[data-theme="grain"] .toast{background:#f5f0e8;color:var(--ink);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.45)}
-:root[data-theme="grain"] .banner{background:rgba(251,146,60,.12);color:var(--text);border:1px solid rgba(251,146,60,.4);border-radius:12px}
+:root[data-theme="grain"] .modal{background:var(--modal-bg);backdrop-filter:blur(3px)}:root[data-theme="grain"] .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+:root[data-theme="grain"] .toast{background:var(--text);color:var(--bg);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+:root[data-theme="grain"] .banner{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--text);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);border-radius:12px}
 :root[data-theme="grain"] .log{border-left:2px solid var(--line)}:root[data-theme="grain"] .log.survey{border-left:2px solid var(--warn)}
 :root[data-theme="grain"] .ob{background:var(--fill);border:1px solid var(--line);border-radius:8px;color:var(--text)}
 :root[data-theme="grain"] .md blockquote{background:var(--fill);border-left-color:var(--brand);border-radius:8px}:root[data-theme="grain"] .md th{background:var(--fill)}:root[data-theme="grain"] .md code{background:var(--fill2)}
 :root[data-theme="grain"] .task{border-top:1px solid var(--line)}
-:root[data-theme="grain"] .sugg{background:#241b14;border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,.5)}:root[data-theme="grain"] .sugg button:hover,:root[data-theme="grain"] .sugg button:focus{background:var(--fill2)}
-:root[data-theme="grain"] .tabbar{background:rgba(26,20,16,.88);backdrop-filter:blur(12px);border-top:1px solid var(--line)}:root[data-theme="grain"] .tabbar button{color:var(--muted)}:root[data-theme="grain"] .tabbar button.on{color:var(--brand);border-top:0;margin-top:0}
-:root[data-theme="grain"] .fab{background:var(--brand);color:var(--ink);border:0;box-shadow:0 10px 30px rgba(251,191,36,.35)}
-:root[data-theme="grain"] .actions{background:#241b14}
-:root[data-theme="grain"] .swatch:has(input:checked){border-color:#241b14;box-shadow:0 0 0 2px var(--brand)}
+:root[data-theme="grain"] .sugg{background:var(--panel);border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,.35)}:root[data-theme="grain"] .sugg button:hover,:root[data-theme="grain"] .sugg button:focus{background:var(--fill2)}
+:root[data-theme="grain"] .tabbar{background:var(--tabbar-bg);backdrop-filter:blur(12px);border-top:1px solid var(--line)}:root[data-theme="grain"] .tabbar button{color:var(--muted)}:root[data-theme="grain"] .tabbar button.on{color:var(--brand-2);border-top:0;margin-top:0}
+:root[data-theme="grain"] .fab{background:var(--brand);color:var(--ink);border:0;box-shadow:0 10px 30px color-mix(in srgb,var(--brand) 35%,transparent)}
+:root[data-theme="grain"] .actions{background:var(--panel)}
+:root[data-theme="grain"] .swatch:has(input:checked){border-color:var(--panel);box-shadow:0 0 0 2px var(--brand)}
 @media (max-width:860px){:root[data-theme="grain"] .modal .box{border-radius:20px 20px 0 0}}
 @media (prefers-reduced-motion:reduce){:root[data-theme="grain"] body::before,:root[data-theme="grain"] body::after{animation:none}:root[data-theme="grain"] .btn{transition:none}:root[data-theme="grain"] .btn:active{transform:none}}
 </style>
@@ -258,7 +259,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.14';
+const APP_VERSION='3.15';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const THEMES=[["wire", "線框稿", "#ffffff"], ["grain", "膠卷噪點", "#1a1410"], ["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
@@ -266,17 +267,16 @@ function applyTheme(){
   if(S&&S.settings){th=S.settings.theme||th;ap=S.settings.appearance||ap}
   if(!THEMES.some(x=>x[0]===th))th='wire';
   const r=document.documentElement;r.dataset.theme=th;if(ap==='dark')r.dataset.dark='1';else if(ap==='light')r.dataset.dark='0';else delete r.dataset.dark;
-  if(th==='grain')r.dataset.dark='1'; // 膠卷噪點是暗房風格，固定深色
   try{localStorage.setItem('ss.theme',th);localStorage.setItem('ss.appearance',ap)}catch{}
-  const m=document.querySelector('meta[name=theme-color]');if(m){const t=THEMES.find(x=>x[0]===th);const dark=r.dataset.dark==='1'||(r.dataset.dark!=='0'&&matchMedia('(prefers-color-scheme: dark)').matches);m.content=th==='grain'?'#1a1410':(dark?'#141414':'#ffffff')}
+  const m=document.querySelector('meta[name=theme-color]');if(m){const t=THEMES.find(x=>x[0]===th);const dark=r.dataset.dark==='1'||(r.dataset.dark!=='0'&&matchMedia('(prefers-color-scheme: dark)').matches);m.content=th==='grain'?(dark?'#1a1410':'#f4eee4'):(dark?'#141414':'#ffffff')}
 }
 function themeCard(){
   const th=S.settings.theme||'blue',ap=S.settings.appearance||'auto';
   return `<div class="card"><h3>外觀</h3>
     <div class="small muted" style="margin-bottom:6px">主題色</div>
-    <div class="row" style="gap:10px;flex-wrap:wrap">${THEMES.map(([k,n,c])=>`<label class="swatch" style="${k==='wire'?'background:#f0f0f0;background-image:linear-gradient(to top right,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px)),linear-gradient(to top left,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px))':k==='grain'?'background:radial-gradient(circle at 38% 38%,#fbbf24 0 30%,#1a1410 32%)':'background:'+c}" title="${n}"><input type="radio" name="themePick" data-act="themePick" value="${k}" ${th===k?'checked':''}></label>`).join('')}</div>
+    <div class="row" style="gap:10px;flex-wrap:wrap">${THEMES.map(([k,n,c])=>`<label class="swatch" style="${k==='wire'?'background:#f0f0f0;background-image:linear-gradient(to top right,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px)),linear-gradient(to top left,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px))':k==='grain'?'background:radial-gradient(circle at 50% 50%,#f59e0b 0 30%,transparent 32%),linear-gradient(135deg,#f4eee4 50%,#1a1410 50%)':'background:'+c}" title="${n}"><input type="radio" name="themePick" data-act="themePick" value="${k}" ${th===k?'checked':''}></label>`).join('')}</div>
     <div class="row" style="margin-top:12px;gap:10px;align-items:center"><span class="small muted">深淺色</span><select data-act="appearancePick" style="width:auto"><option value="auto" ${ap==='auto'?'selected':''}>跟隨系統</option><option value="light" ${ap==='light'?'selected':''}>淺色</option><option value="dark" ${ap==='dark'?'selected':''}>深色</option></select></div>
-    <p class="small muted" style="margin-top:8px">設定會跟著同步，手機和電腦一致。第一個「線框稿」與其他顏色都是線框設計稿的語彙（細線框、虛線分隔、打叉頭像），選的只是強調色。第二個「膠卷噪點」是另一種風格：暗房色調、琥珀色強調、畫面上一層會動的膠卷顆粒，固定深色（深淺色設定對它無效）。行程紅黃綠、客戶分級、狀態標籤的顏色都保留。</p>
+    <p class="small muted" style="margin-top:8px">設定會跟著同步，手機和電腦一致。第一個「線框稿」與其他顏色都是線框設計稿的語彙（細線框、虛線分隔、打叉頭像），選的只是強調色。第二個「膠卷噪點」是另一種風格：琥珀色強調、圓角卡片、畫面上一層會動的膠卷顆粒；淺色是米紙、深色是暗房，跟著下面的深淺色設定。行程紅黃綠、客戶分級、狀態標籤的顏色都保留。</p>
    </div>`;
 }
 const GOOGLE_CLIENT_ID='615249101814-ogv3iv1jktag6hueptfakj37l1pejfuh.apps.googleusercontent.com';  // 管理者填入 Google OAuth「網頁應用程式」用戶端 ID；留空則只能離線使用
@@ -1103,24 +1103,22 @@ function viewSettings(){
       <div class="w"><button class="btn p">儲存規則</button></div>
     </form>
    </div>
-   <div class="card"><h3>今日話題（可選）</h3>
-    <p class="small muted">每天的「保險業務破冰時事」。沒有設定來源時首頁不會顯示這個卡片。</p>
-    <label class="chk small"><input type="checkbox" data-act="toggleTopicShow" ${S.settings.topicShow?'checked':''}>在首頁顯示「今日話題」卡片（含手動用 Claude / ChatGPT 產生的按鈕）</label>
-    <h4 style="margin:12px 0 6px">自動帶入</h4>
-    <p class="small muted">讓 Codex 或其他工具每天早上把產出寫到固定的檔案或網址，程式開啟時自動讀進首頁，不必再手動貼。讀到的內容會存進同步檔，手機同步後也看得到。檔案第一行建議寫當天日期（例如 2026-11-03），程式會用它判斷是哪一天的話題。</p>
-    <h4 style="margin:10px 0 6px">建議：讀取電腦排程發布到網站的話題（手機、電腦都適用）</h4>
-    <p class="small muted">電腦上的排程「業務秘書-今日話題」每天早上產生話題後，會順便發布到 ${esc(SITE_TOPIC_URL)}；任何裝置都能直接讀，不用電腦開著程式。</p>
-    ${(S.settings.topicUrl||'').trim()===SITE_TOPIC_URL?`<span class="badge ok">已使用網站上的今日話題</span>`:`<button class="btn p" data-act="useSiteTopic">使用網站上的今日話題</button>`}
-    <h4 style="margin:12px 0 6px">進階：電腦直接讀取雲端硬碟資料夾裡的檔案（Chrome / Edge）</h4>
-    ${FS_OK?`<div class="row">${TH?`<span class="badge ok">已連結：${esc(TH.name)}</span><button class="btn s" data-act="refreshTopic">立即讀取</button><button class="btn s" data-act="unlinkTopicFile">解除</button>`:`<button class="btn p" data-act="linkTopicFile">連結話題檔（例如 今日話題.md）</button>`}</div>`:'<p class="small muted">這個瀏覽器不支援，請用 Chrome 或 Edge，或改用下面的網址方式。</p>'}
-    <h4 style="margin:12px 0 6px">進階：從其他網址讀取</h4>
-    <input type="text" data-act="topicUrlText" value="${esc(S.settings.topicUrl||'')}" placeholder="純文字或 JSON 的網址，例如 Google 試算表「檔案 → 共用 → 發布到網路」產生的連結">
-    <p class="small muted" style="margin-top:6px">網址內容會公開給知道連結的人，請只放話題，不要放客戶資料。</p>
+   <div class="card"><h3>今日話題</h3>
+    <p class="small muted">電腦排程每天早上產生的「保險業務破冰時事」會發布到網站，程式開啟時自動讀進首頁；手機、電腦都一樣，不用設定。</p>
+    <div class="row" style="gap:8px">${S.settings.topicSiteOff?'<span class="badge gray">已停用網站來源</span>':'<span class="badge ok">來源：網站上的今日話題</span>'}${S.settings.topicLastAt?`<span class="small muted">上次讀入 ${new Date(S.settings.topicLastAt).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>`:''}<button class="btn s" data-act="refreshTopic">立即讀取</button></div>
+    <details style="margin-top:10px"><summary class="small muted" style="cursor:pointer">進階（通常不用動）</summary>
+     <label class="chk small" style="margin-top:8px"><input type="checkbox" data-act="toggleTopicSite" ${S.settings.topicSiteOff?'':'checked'}>讀取網站上的今日話題（${esc(SITE_TOPIC_URL)}）</label>
+     <label class="chk small"><input type="checkbox" data-act="toggleTopicShow" ${S.settings.topicShow?'checked':''}>沒有話題內容時首頁也顯示「今日話題」卡片（含手動用 Claude / ChatGPT 產生的按鈕）</label>
+     <h4 style="margin:12px 0 6px">電腦直接讀取雲端硬碟資料夾裡的檔案（Chrome / Edge）</h4>
+     ${FS_OK?`<div class="row">${TH?`<span class="badge ok">已連結：${esc(TH.name)}</span><button class="btn s" data-act="unlinkTopicFile">解除</button>`:`<button class="btn s" data-act="linkTopicFile">連結話題檔（例如 今日話題.md）</button>`}</div>`:'<p class="small muted">這個瀏覽器不支援，請用 Chrome 或 Edge。</p>'}
+     <h4 style="margin:12px 0 6px">從其他網址讀取</h4>
+     <input type="text" data-act="topicUrlText" value="${esc(S.settings.topicUrl||'')}" placeholder="純文字或 JSON 的網址，例如 Google 試算表「檔案 → 共用 → 發布到網路」產生的連結">
+     <p class="small muted" style="margin-top:6px">檔案第一行建議寫當天日期（例如 2026-11-03），程式會用它判斷是哪一天的話題。網址內容會公開給知道連結的人，請只放話題，不要放客戶資料。</p>
+     <h4 style="margin:12px 0 6px">手動產生用的提示詞</h4>
+     <p class="small muted">首頁「用 Claude / ChatGPT 產生」按鈕送出的指令。程式會自動在前面加上今天日期、在後面加上當天要見的客戶與特徵，這裡只放主體。</p>
+     <textarea data-act="topicPromptText" style="min-height:160px;font-size:13px">${esc(S.settings.topicPrompt||DEFAULT_TOPIC_PROMPT)}</textarea>
+    </details>
    </div>
-   <div class="card"><h3>今日話題提示詞</h3>
-    <p class="small muted">首頁「今日話題」按鈕送出的指令。程式會自動在前面加上今天日期、在後面加上當天要見的客戶與特徵，這裡只放主體。</p>
-    <textarea data-act="topicPromptText" style="min-height:160px;font-size:13px">${esc(S.settings.topicPrompt||DEFAULT_TOPIC_PROMPT)}</textarea>
-    <div class="row" style="margin-top:6px"><button class="btn s" data-act="resetTopicPrompt">還原成預設（Codex 版）</button><button class="btn s" data-act="copyPrompt">複製完整提示詞</button></div>
    </div>
    <div class="card"><h3>資料</h3>
     <div class="kv"><div class="k">客戶</div><div>${n} 位</div><div class="k">接觸紀錄</div><div>${nl} 筆</div><div class="k">行程待辦</div><div>${nt} 筆</div><div class="k">保單</div><div>${np} 張</div></div>
@@ -1187,15 +1185,20 @@ function storeTopic(date,text,src){
   if(tp[d]===text)return false;tp[d]=text;for(const k of Object.keys(tp))if(daysBetween(k,today())>60)delete tp[k];
   setSettings({topics:tp,topicLastSrc:src,topicLastAt:Date.now()});return true;
 }
+function topicUrls(){ // 網站上的今日話題是預設來源；進階可另外加一個網址
+  if(!S)return [];const out=[];if(!S.settings.topicSiteOff)out.push(SITE_TOPIC_URL);
+  const u=(S.settings.topicUrl||'').trim();if(u&&u!==SITE_TOPIC_URL)out.push(u);return out;
+}
 async function refreshTopic(force){
   if(!S)return;if(!force&&Date.now()-topicLastRead<10*60*1000)return;topicLastRead=Date.now();let changed=false;
+  if((S.settings.topicUrl||'').trim()===SITE_TOPIC_URL)setSettings({topicUrl:''}); // 舊版用網址欄指定網站；現在是預設，不必再填
   if(TH){try{let pm=await TH.queryPermission({mode:'read'});if(pm!=='granted'&&force)pm=await TH.requestPermission({mode:'read'});topicPermOK=pm==='granted';
     if(topicPermOK){const f=await TH.getFile();const {date,text}=parseTopicText(await f.text());if(storeTopic(date||iso(new Date(f.lastModified)),text,'檔案 '+f.name))changed=true}
     else if(force)toast('沒有取得讀取話題檔的權限')}catch(e){console.warn(e);if(force)toast('讀取話題檔失敗：'+e.message)}}
-  const url=(S.settings.topicUrl||'').trim();
-  if(url){try{const bust=url.startsWith(location.origin)?url+(url.includes('?')?'&':'?')+'_t='+Date.now():url;const r=await fetch(bust,{cache:'no-store'});if(r.ok){const {date,text}=parseTopicText(await r.text());if(storeTopic(date,text,'網址'))changed=true}else if(force)toast('話題網址讀取失敗：HTTP '+r.status)}
-    catch(e){if(force)toast('話題網址無法讀取（可能沒有網路，或該網址不允許跨站讀取）')}}
-  if(changed){render();toast('今日話題已更新')}else if(force&&(TH||url)){render();toast('話題沒有變化')}
+  const urls=topicUrls();
+  for(const url of urls){try{const bust=url.startsWith(location.origin)?url+(url.includes('?')?'&':'?')+'_t='+Date.now():url;const r=await fetch(bust,{cache:'no-store'});if(r.ok){const {date,text}=parseTopicText(await r.text());if(storeTopic(date,text,url===SITE_TOPIC_URL?'網站':'網址'))changed=true}else if(force)toast((url===SITE_TOPIC_URL?'網站上的話題':'話題網址')+'讀取失敗：HTTP '+r.status)}
+    catch(e){if(force)toast((url===SITE_TOPIC_URL?'網站上的話題':'話題網址')+'無法讀取（可能沒有網路）')}}
+  if(changed){render();toast('今日話題已更新')}else if(force&&(TH||urls.length)){render();toast('話題沒有變化')}
 }
 function mdInline(t){
   return t.replace(/`([^`]+)`/g,'<code>$1</code>')
@@ -1228,15 +1231,15 @@ function mdHtml(src){
 function topicCard(){
   const t=today(),tp=S.settings.topics||{};let txt=tp[t]||'',label='';
   if(!txt){const ks=Object.keys(tp).filter(k=>tp[k]).sort();if(ks.length){txt=tp[ks[ks.length-1]];label=`<span class="badge warn">顯示 ${fmtDate(ks[ks.length-1])} 的話題，今天的還沒產生</span>`}}
-  const q=encodeURIComponent(topicPrompt());const auto=!!(TH||(S.settings.topicUrl||'').trim());
+  const q=encodeURIComponent(topicPrompt());const urls=topicUrls();const auto=!!(TH||urls.length);
   if(!txt&&!auto&&!S.settings.topicShow)return ''; // 可選功能：沒有內容、沒有自動來源、也沒打開手動模式就不顯示
-  const src=auto?`<div class="small muted" style="margin-bottom:6px">自動來源：${TH?`檔案「${esc(TH.name)}」`:''}${TH&&S.settings.topicUrl?' 與 ':''}${S.settings.topicUrl?'網址':''}${S.settings.topicLastAt?` ・ 上次讀入 ${new Date(S.settings.topicLastAt).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:''} <button class="btn s ghost" data-act="refreshTopic">重新讀取</button>${TH&&!topicPermOK?`<button class="btn s p" data-act="refreshTopic">允許讀取話題檔</button>`:''}</div>`:'';
+  const src=auto?`<div class="small muted" style="margin-bottom:6px">來源：${[urls.includes(SITE_TOPIC_URL)?'網站':'',TH?`檔案「${esc(TH.name)}」`:'',urls.some(u=>u!==SITE_TOPIC_URL)?'其他網址':''].filter(Boolean).join('、')}${S.settings.topicLastAt?` ・ 上次讀入 ${new Date(S.settings.topicLastAt).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}`:''} <button class="btn s ghost" data-act="refreshTopic">重新讀取</button>${TH&&!topicPermOK?`<button class="btn s p" data-act="refreshTopic">允許讀取話題檔</button>`:''}</div>`:'';
   return `<div class="card"><h3>今日話題 <span class="small muted" style="font-weight:400">${fmtDate(t,true)}</span></h3>
   ${src}${label?`<div style="margin-bottom:6px">${label}</div>`:''}
   ${txt?`<div class="md" style="max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 14px 10px" id="topicView">${mdHtml(txt)}</div>
   <details style="margin-top:6px"><summary class="small muted" style="cursor:pointer">手動編輯 / 自己產生</summary>`:''}
   <div class="row" style="margin:8px 0"><a class="btn s p" data-act="ext" target="_blank" rel="noopener" href="https://claude.ai/new?q=${q}">用 Claude 產生今日破冰時事</a><a class="btn s" data-act="ext" target="_blank" rel="noopener" href="https://chatgpt.com/?q=${q}">用 ChatGPT 產生</a><button class="btn s" data-act="copyPrompt">複製提示詞</button></div>
-  <textarea data-act="topicText" placeholder="${auto?'自動來源會讀進來；也可以在這裡手動貼上或修改。':'按上面的按鈕產生三則話題後貼回這裡（會跟著同步）；或到「設定 → 今日話題自動帶入」讓 Codex 每天自動寫進來。'}" style="min-height:64px">${esc(txt)}</textarea>
+  <textarea data-act="topicText" placeholder="${auto?'自動來源會讀進來；也可以在這裡手動貼上或修改。':'按上面的按鈕產生三則話題後貼回這裡（會跟著同步）；或在「設定 → 今日話題 → 進階」重新打開網站來源。'}" style="min-height:64px">${esc(txt)}</textarea>
   ${txt?'</details>':''}</div>`;
 }
 
@@ -1616,7 +1619,7 @@ document.addEventListener('click',async e=>{
     case 'copyPrompt':try{await navigator.clipboard.writeText(topicPrompt());toast('已複製，貼到任何 AI 助理即可')}catch{prompt('請手動複製：',topicPrompt())}break;
     case 'importCsv':importCsv();break;
     case 'linkTopicFile':linkTopicFile();break;
-    case 'useSiteTopic':setSettings({topicUrl:SITE_TOPIC_URL});toast('已設定，每次開啟程式會自動讀取網站上的今日話題');refreshTopic(true);break;
+    case 'toggleTopicSite':setSettings({topicSiteOff:!el.checked});toast(el.checked?'會讀取網站上的今日話題':'不再讀取網站上的今日話題');if(el.checked)refreshTopic(true);break;
     case 'unlinkTopicFile':unlinkTopicFile();break;
     case 'refreshTopic':refreshTopic(true);break;
     case 'resetTopicPrompt':if(confirm('還原成預設的提示詞？你修改過的內容會被覆蓋。')){setSettings({topicPrompt:''});render();toast('已還原')}break;
