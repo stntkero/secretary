@@ -11,64 +11,20 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
-  --bg:#f4f6fa;--card:#fff;--text:#1b2430;--muted:#66717f;--line:#e2e7ee;
+  --bg:#ffffff;--card:#ffffff;--text:#111111;--muted:#777777;--line:#cccccc;--fill:#f0f0f0;--fill2:#e4e4e4;--fill3:#d8d8d8;
   --brand:#0b3d91;--brand-2:#1f5bd6;--ok:#1d8f4e;--warn:#c77700;--bad:#c62828;--sale:#1f5bd6;--recruit:#7b3fa0;
-  --r:12px;--shadow:0 1px 2px rgba(16,24,40,.06),0 1px 8px rgba(16,24,40,.05);
+  --r:4px;--shadow:none;
 }
-@media (prefers-color-scheme:dark){:root:not([data-dark="0"]){--bg:#121820;--card:#1b232e;--text:#e8edf3;--muted:#9aa6b4;--line:#2b3542;--brand:#5b8def;--brand-2:#6f9cf5;--shadow:none}}
-:root[data-dark="1"]{--bg:#121820;--card:#1b232e;--text:#e8edf3;--muted:#9aa6b4;--line:#2b3542;--brand:#5b8def;--brand-2:#6f9cf5;--shadow:none}
+@media (prefers-color-scheme:dark){:root:not([data-dark="0"]){--bg:#141414;--card:#141414;--text:#f0f0f0;--muted:#8a8a8a;--line:#3d3d3d;--fill:#1e1e1e;--fill2:#2a2a2a;--fill3:#353535;--brand:#5b8def;--brand-2:#6f9cf5;--shadow:none}}
+:root[data-dark="1"]{--bg:#141414;--card:#141414;--text:#f0f0f0;--muted:#8a8a8a;--line:#3d3d3d;--fill:#1e1e1e;--fill2:#2a2a2a;--fill3:#353535;--brand:#5b8def;--brand-2:#6f9cf5;--shadow:none}
 /* 主題配色 */
 :root[data-theme="navy"]{--brand:#102a43;--brand-2:#2b6cb0}:root[data-theme="green"]{--brand:#1b5e20;--brand-2:#2e7d32}:root[data-theme="teal"]{--brand:#00695c;--brand-2:#00897b}:root[data-theme="wine"]{--brand:#7b1131;--brand-2:#b3264a}:root[data-theme="purple"]{--brand:#4a148c;--brand-2:#7b1fa2}:root[data-theme="orange"]{--brand:#bf360c;--brand-2:#ef6c00}:root[data-theme="graphite"]{--brand:#263238;--brand-2:#455a64}
 @media (prefers-color-scheme:dark){:root[data-theme="navy"]:not([data-dark="0"]){--brand:#2b6cb0;--brand-2:#3182ce;--side:#102a43}:root[data-theme="green"]:not([data-dark="0"]){--brand:#2e7d32;--brand-2:#43a047;--side:#1b5e20}:root[data-theme="teal"]:not([data-dark="0"]){--brand:#00897b;--brand-2:#009688;--side:#00695c}:root[data-theme="wine"]:not([data-dark="0"]){--brand:#c2185b;--brand-2:#d81b60;--side:#7b1131}:root[data-theme="purple"]:not([data-dark="0"]){--brand:#8e24aa;--brand-2:#ab47bc;--side:#4a148c}:root[data-theme="orange"]:not([data-dark="0"]){--brand:#e65100;--brand-2:#f57c00;--side:#bf360c}:root[data-theme="graphite"]:not([data-dark="0"]){--brand:#546e7a;--brand-2:#607d8b;--side:#263238}}
 :root[data-theme="navy"][data-dark="1"]{--brand:#2b6cb0;--brand-2:#3182ce;--side:#102a43}:root[data-theme="green"][data-dark="1"]{--brand:#2e7d32;--brand-2:#43a047;--side:#1b5e20}:root[data-theme="teal"][data-dark="1"]{--brand:#00897b;--brand-2:#009688;--side:#00695c}:root[data-theme="wine"][data-dark="1"]{--brand:#c2185b;--brand-2:#d81b60;--side:#7b1131}:root[data-theme="purple"][data-dark="1"]{--brand:#8e24aa;--brand-2:#ab47bc;--side:#4a148c}:root[data-theme="orange"][data-dark="1"]{--brand:#e65100;--brand-2:#f57c00;--side:#bf360c}:root[data-theme="graphite"][data-dark="1"]{--brand:#546e7a;--brand-2:#607d8b;--side:#263238}
-/* ===== 線框稿主題（wireframe lo-fi）：純灰階、細線框、虛線分隔、打叉佔位；淺色＝白紙黑線，深色＝黑紙白線 ===== */
-:root[data-theme="wire"]{--wp:#ffffff;--wk:#111111;--wk2:#555555;--wk3:#888888;--wl:#cccccc;--wf:#f0f0f0;--wf2:#e4e4e4;--wf3:#d8d8d8;
-  --bg:var(--wp);--card:var(--wp);--text:var(--wk);--muted:var(--wk3);--line:var(--wl);--brand:var(--wk);--brand-2:var(--wk);--ok:var(--wk);--warn:var(--wk);--bad:var(--wk);--sale:var(--wk);--recruit:var(--wk);--side:var(--wp);--r:4px;--shadow:none;
-  --x:linear-gradient(to top right,transparent calc(50% - .5px),var(--wl) 50%,transparent calc(50% + .5px)),linear-gradient(to top left,transparent calc(50% - .5px),var(--wl) 50%,transparent calc(50% + .5px))}
-@media (prefers-color-scheme:dark){:root[data-theme="wire"]:not([data-dark="0"]){--wp:#141414;--wk:#f0f0f0;--wk2:#b8b8b8;--wk3:#8a8a8a;--wl:#3d3d3d;--wf:#1e1e1e;--wf2:#2a2a2a;--wf3:#353535}}
-:root[data-theme="wire"][data-dark="1"]{--wp:#141414;--wk:#f0f0f0;--wk2:#b8b8b8;--wk3:#8a8a8a;--wl:#3d3d3d;--wf:#1e1e1e;--wf2:#2a2a2a;--wf3:#353535}
-:root[data-theme="wire"] a{color:var(--wk);text-decoration:underline dotted}
-:root[data-theme="wire"] .side{background:var(--wp);color:var(--wk);border-right:1px solid var(--wl)}
-:root[data-theme="wire"] .side .logo{color:var(--wk)}:root[data-theme="wire"] .side .logo::after{content:'　〔草稿〕';font-size:12px;font-weight:400;color:var(--wk3)}
-:root[data-theme="wire"] .side nav button{color:var(--wk2);border:1px solid transparent;border-radius:4px}
-:root[data-theme="wire"] .side nav button:hover{background:var(--wf);color:var(--wk)}
-:root[data-theme="wire"] .side nav button.on{background:var(--wp);color:var(--wk);border:2px solid var(--wk)}
-:root[data-theme="wire"] .side .foot{color:var(--wk3)}
-:root[data-theme="wire"] .card{border:1px solid var(--wl);border-radius:4px;box-shadow:none}
-:root[data-theme="wire"] .card h3{justify-content:flex-start}:root[data-theme="wire"] .card h3>*:last-child:not(:only-child){margin-left:auto}:root[data-theme="wire"] .card h3::before{content:'// ';font-size:12px;font-weight:400;color:var(--wk3)}
-:root[data-theme="wire"] .card,:root[data-theme="wire"] .side,:root[data-theme="wire"] .tabbar,:root[data-theme="wire"] h1,:root[data-theme="wire"] h2,:root[data-theme="wire"] .fab{filter:grayscale(1)} /* 表情符號與行內色點一律去色 */
-:root[data-theme="wire"] .kpi .card:hover{background:var(--wf)}
-:root[data-theme="wire"] .kpi .n{color:var(--wk)}
-:root[data-theme="wire"] .badge{background:var(--wp);border:1px solid var(--wl);color:var(--wk);border-radius:2px;font-weight:500}
-:root[data-theme="wire"] .badge.ok,:root[data-theme="wire"] .badge.bad,:root[data-theme="wire"] .badge.warn{border:2px solid var(--wk)}
-:root[data-theme="wire"] .btn{border:1px solid var(--wl);background:var(--wp);color:var(--wk);border-radius:999px;transition:transform 120ms}
-:root[data-theme="wire"] .btn:hover{border-color:var(--wk);background:var(--wf)}
-:root[data-theme="wire"] .btn:active{background:var(--wf3);transform:translateY(1px)}
-:root[data-theme="wire"] .btn.p{background:var(--wp);border:2px solid var(--wk);color:var(--wk);font-weight:600}
-:root[data-theme="wire"] .btn.ghost{border:1px dashed var(--wl);background:var(--wp);color:var(--wk)}
-:root[data-theme="wire"] .btn.d{color:var(--wk);border:1px dashed var(--wk)}
-:root[data-theme="wire"] .item{border-top:1px dashed var(--wl)}:root[data-theme="wire"] .item:hover{background:var(--wf)}
-:root[data-theme="wire"] .avatar{background:var(--wf);background-image:var(--x);border:1px solid var(--wl);color:transparent;filter:grayscale(1)}
-:root[data-theme="wire"] .dot,:root[data-theme="wire"] .swatch{filter:grayscale(1)}:root[data-theme="wire"] .swatch:has(input[name=themePick]){filter:none} /* 主題選色盤保留原色，才看得出要切回哪個 */
-:root[data-theme="wire"] .empty{border:1px dashed var(--wl);border-radius:4px}
-:root[data-theme="wire"] input[type=text],:root[data-theme="wire"] input[type=search],:root[data-theme="wire"] input[type=date],:root[data-theme="wire"] input[type=time],:root[data-theme="wire"] input[type=number],:root[data-theme="wire"] input[type=password],:root[data-theme="wire"] input[type=email],:root[data-theme="wire"] input[type=tel],:root[data-theme="wire"] select,:root[data-theme="wire"] textarea{border:1px solid var(--wl);border-radius:4px;background:var(--wp);color:var(--wk)}
-:root[data-theme="wire"] input:focus,:root[data-theme="wire"] select:focus,:root[data-theme="wire"] textarea:focus{outline:none;border-color:var(--wk);box-shadow:0 0 0 1px var(--wk)}
-:root[data-theme="wire"] .chip{border:1px solid var(--wl);background:var(--wp);color:var(--wk2);border-radius:999px}
-:root[data-theme="wire"] .chip.on,:root[data-theme="wire"] .chip:has(input:checked){background:var(--wp);border:2px solid var(--wk);color:var(--wk);font-weight:600}
-:root[data-theme="wire"] .modal{background:rgba(0,0,0,.45)}:root[data-theme="wire"] .modal .box{border:1px solid var(--wk);border-radius:6px;box-shadow:4px 4px 0 var(--wl)}
-:root[data-theme="wire"] .toast{background:var(--wk);color:var(--wp);border-radius:4px;box-shadow:3px 3px 0 var(--wl)}
-:root[data-theme="wire"] .banner{background:var(--wp);color:var(--wk);border:1px dashed var(--wk);border-radius:4px}
-:root[data-theme="wire"] .log{border-left:2px solid var(--wk)}:root[data-theme="wire"] .log.survey{border-left-style:dashed}
-:root[data-theme="wire"] .ob{background:var(--wf);border:1px dashed var(--wl);border-radius:2px;color:var(--wk)}
-:root[data-theme="wire"] .md blockquote{background:var(--wf);border-left-color:var(--wk);border-radius:2px}:root[data-theme="wire"] .md th{background:var(--wf)}:root[data-theme="wire"] .md h4{color:var(--wk)}:root[data-theme="wire"] .md code{background:var(--wf)}
-:root[data-theme="wire"] .task{border-top:1px dashed var(--wl)}
-:root[data-theme="wire"] .task.cr{border-left:4px solid var(--wk)}:root[data-theme="wire"] .task.cy{border-left:4px dashed var(--wk2)}:root[data-theme="wire"] .task.cg{border-left:4px dotted var(--wl)}
-:root[data-theme="wire"] .sugg{border-radius:4px;box-shadow:3px 3px 0 var(--wl)}:root[data-theme="wire"] .sugg button:hover,:root[data-theme="wire"] .sugg button:focus{background:var(--wf)}
-:root[data-theme="wire"] .tabbar{background:var(--wp);border-top:1px solid var(--wl)}:root[data-theme="wire"] .tabbar button{color:var(--wk3)}:root[data-theme="wire"] .tabbar button.on{color:var(--wk);border-top:2px solid var(--wk);margin-top:-1px}
-:root[data-theme="wire"] .fab{background:var(--wp);color:var(--wk);border:2px solid var(--wk);box-shadow:3px 3px 0 var(--wk)}
-:root[data-theme="wire"] .actions{background:var(--wp)}
-:root[data-theme="wire"] h1::after{content:'　// 線框稿';font-size:12px;font-weight:400;color:var(--wk3)}
-@media (prefers-reduced-motion:reduce){:root[data-theme="wire"] .btn{transition:none}:root[data-theme="wire"] .btn:active{transform:none}}
+/* 線框稿＝純灰階：強調色就是墨色 */
+:root[data-theme="wire"]{--brand:#111111;--brand-2:#111111}
+@media (prefers-color-scheme:dark){:root[data-theme="wire"]:not([data-dark="0"]){--brand:#f0f0f0;--brand-2:#f0f0f0}}
+:root[data-theme="wire"][data-dark="1"]{--brand:#f0f0f0;--brand-2:#f0f0f0}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,"Segoe UI","Noto Sans TC","Microsoft JhengHei",Roboto,sans-serif}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -91,8 +47,6 @@ main{padding:22px 26px 90px;max-width:1240px;width:100%}
 .badge.sale{background:#e6eefc;color:var(--sale)}.badge.recruit{background:#f1e8f8;color:var(--recruit)}
 .badge.warn{background:#fff3e0;color:var(--warn)}.badge.bad{background:#fdecea;color:var(--bad)}.badge.ok{background:#e6f4ea;color:var(--ok)}
 .badge.gray{background:#eef1f5;color:var(--muted)}
-@media (prefers-color-scheme:dark){:root:not([data-dark="0"]) .badge{background:#243149}:root:not([data-dark="0"]) .badge.sale{background:#213457}:root:not([data-dark="0"]) .badge.recruit{background:#36264a}:root:not([data-dark="0"]) .badge.warn{background:#4a3410}:root:not([data-dark="0"]) .badge.bad{background:#4a1f1f}:root:not([data-dark="0"]) .badge.ok{background:#1e3a2a}:root:not([data-dark="0"]) .badge.gray{background:#2b3542}}
-:root[data-dark="1"] .badge{background:#243149}:root[data-dark="1"] .badge.sale{background:#213457}:root[data-dark="1"] .badge.recruit{background:#36264a}:root[data-dark="1"] .badge.warn{background:#4a3410}:root[data-dark="1"] .badge.bad{background:#4a1f1f}:root[data-dark="1"] .badge.ok{background:#1e3a2a}:root[data-dark="1"] .badge.gray{background:#2b3542}
 .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:500;white-space:nowrap}
 .btn:hover{border-color:var(--brand-2)}
 .btn.p{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
@@ -157,8 +111,6 @@ label.f span.l{display:block;font-size:13px;color:var(--muted);margin-bottom:4px
 .log .h{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
 .log p{margin:4px 0;white-space:pre-wrap}
 .ob{background:#fff8e6;border-radius:8px;padding:6px 10px;font-size:14px;margin-top:4px;white-space:pre-wrap}
-@media (prefers-color-scheme:dark){:root:not([data-dark="0"]) .ob{background:#3a2d12}}
-:root[data-dark="1"] .ob{background:#3a2d12}
 .task{display:flex;gap:10px;align-items:flex-start;padding:9px 2px 9px 10px;border-top:1px solid var(--line);border-left:4px solid transparent}
 .task.cr{border-left-color:#e53935}.task.cy{border-left-color:#f9a825}.task.cg{border-left-color:#43a047}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
@@ -209,6 +161,44 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
   .kpi{grid-template-columns:1fr 1fr}
 }
 @media print{.side,.tabbar,.fab,.btn{display:none!important}main{padding:0}}
+/* ===== 線框語彙（所有主題共用）：細線框、虛線分隔、打叉佔位、方正小圓角；顏色來自所選主題色與原本的語意色（行程紅黃綠、分級、狀態標籤） ===== */
+a{color:var(--brand-2);text-decoration:underline dotted}
+.side{background:var(--card);color:var(--text);border-right:1px solid var(--line)}
+.side .logo{color:var(--brand)}.side .logo::after{content:'　〔草稿〕';font-size:12px;font-weight:400;color:var(--muted)}
+.side nav button{color:var(--muted);border:1px solid transparent;border-radius:4px}
+.side nav button:hover{background:var(--fill);color:var(--text)}
+.side nav button.on{background:var(--card);color:var(--brand);border:2px solid var(--brand)}
+.side .foot{color:var(--muted)}
+.card{border:1px solid var(--line);border-radius:4px;box-shadow:none}
+.card h3{justify-content:flex-start}.card h3>*:last-child:not(:only-child){margin-left:auto}.card h3::before{content:'// ';font-size:12px;font-weight:400;color:var(--muted)}
+.kpi .card:hover{background:var(--fill)}
+.badge{background:transparent;border:1px solid var(--line);color:var(--brand);border-radius:2px;font-weight:500}
+.badge.sale,.badge.recruit,.badge.warn,.badge.bad,.badge.ok,.badge.gray{background:transparent}.badge.sale{color:var(--sale);border-color:var(--sale)}.badge.recruit{color:var(--recruit);border-color:var(--recruit)}.badge.warn{color:var(--warn);border-color:var(--warn)}.badge.bad{color:var(--bad);border-color:var(--bad)}.badge.ok{color:var(--ok);border-color:var(--ok)}.badge.gray{color:var(--muted);border-color:var(--line)}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;transition:transform 120ms}
+.btn:hover{border-color:var(--brand);background:var(--fill)}
+.btn:active{background:var(--fill3);transform:translateY(1px)}
+.btn.p{background:var(--card);border:2px solid var(--brand);color:var(--brand);font-weight:600}
+.btn.ghost{border:1px dashed var(--line);background:transparent;color:var(--brand-2)}
+.btn.d{color:var(--bad);border:1px dashed var(--bad)}
+.item{border-top:1px dashed var(--line)}.item:hover{background:var(--fill)}
+.avatar{background-color:var(--fill);background-image:linear-gradient(to top right,transparent calc(50% - .5px),var(--line) 50%,transparent calc(50% + .5px)),linear-gradient(to top left,transparent calc(50% - .5px),var(--line) 50%,transparent calc(50% + .5px));border:1px solid var(--line);color:transparent}
+.empty{border:1px dashed var(--line);border-radius:4px}
+input[type=text],input[type=search],input[type=date],input[type=time],input[type=number],input[type=password],input[type=email],input[type=tel],select,textarea{border:1px solid var(--line);border-radius:4px;background:var(--card);color:var(--text)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px}
+.chip.on,.chip:has(input:checked){background:var(--card);border:2px solid var(--brand);color:var(--brand);font-weight:600}
+.modal{background:rgba(0,0,0,.45)}.modal .box{border:1px solid var(--text);border-radius:6px;box-shadow:4px 4px 0 var(--line)}
+.toast{background:var(--text);color:var(--card);border-radius:4px;box-shadow:3px 3px 0 var(--line)}
+.banner{background:var(--card);color:var(--text);border:1px dashed var(--warn);border-radius:4px}
+.log{border-left:2px solid var(--line)}.log.survey{border-left:2px dashed var(--warn)}
+.ob{background:var(--fill);border:1px dashed var(--line);border-radius:2px;color:var(--text)}
+.md blockquote{background:var(--fill);border-left-color:var(--brand);border-radius:2px}.md th{background:var(--fill)}.md code{background:var(--fill)}
+.task{border-top:1px dashed var(--line)}
+.sugg{border-radius:4px;box-shadow:3px 3px 0 var(--line)}.sugg button:hover,.sugg button:focus{background:var(--fill)}
+.tabbar{background:var(--card);border-top:1px solid var(--line)}.tabbar button{color:var(--muted)}.tabbar button.on{color:var(--brand);border-top:2px solid var(--brand);margin-top:-1px}
+.fab{background:var(--card);color:var(--brand);border:2px solid var(--brand);box-shadow:3px 3px 0 var(--brand)}
+.actions{background:var(--card)}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}.btn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -217,7 +207,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.12';
+const APP_VERSION='3.13';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const THEMES=[["wire", "線框稿", "#ffffff"], ["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
@@ -226,7 +216,7 @@ function applyTheme(){
   if(!THEMES.some(x=>x[0]===th))th='wire';
   const r=document.documentElement;r.dataset.theme=th;if(ap==='dark')r.dataset.dark='1';else if(ap==='light')r.dataset.dark='0';else delete r.dataset.dark;
   try{localStorage.setItem('ss.theme',th);localStorage.setItem('ss.appearance',ap)}catch{}
-  const m=document.querySelector('meta[name=theme-color]');if(m){const t=THEMES.find(x=>x[0]===th);const dark=r.dataset.dark==='1'||(r.dataset.dark!=='0'&&matchMedia('(prefers-color-scheme: dark)').matches);m.content=th==='wire'?(dark?'#141414':'#ffffff'):(t?t[2]:'#0b3d91')}
+  const m=document.querySelector('meta[name=theme-color]');if(m){const t=THEMES.find(x=>x[0]===th);const dark=r.dataset.dark==='1'||(r.dataset.dark!=='0'&&matchMedia('(prefers-color-scheme: dark)').matches);m.content=dark?'#141414':'#ffffff'}
 }
 function themeCard(){
   const th=S.settings.theme||'blue',ap=S.settings.appearance||'auto';
@@ -234,7 +224,7 @@ function themeCard(){
     <div class="small muted" style="margin-bottom:6px">主題色</div>
     <div class="row" style="gap:10px;flex-wrap:wrap">${THEMES.map(([k,n,c])=>`<label class="swatch" style="${k==='wire'?'background:#f0f0f0;background-image:linear-gradient(to top right,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px)),linear-gradient(to top left,transparent calc(50% - .5px),#777 50%,transparent calc(50% + .5px))':'background:'+c}" title="${n}"><input type="radio" name="themePick" data-act="themePick" value="${k}" ${th===k?'checked':''}></label>`).join('')}</div>
     <div class="row" style="margin-top:12px;gap:10px;align-items:center"><span class="small muted">深淺色</span><select data-act="appearancePick" style="width:auto"><option value="auto" ${ap==='auto'?'selected':''}>跟隨系統</option><option value="light" ${ap==='light'?'selected':''}>淺色</option><option value="dark" ${ap==='dark'?'selected':''}>深色</option></select></div>
-    <p class="small muted" style="margin-top:8px">設定會跟著同步，手機和電腦一致。第一個「線框稿」是預設外觀：純灰階的設計稿風格，淺色是白紙黑線、深色是黑紙白線，行程顏色改以實線 / 虛線 / 點線區分；其他顏色主題仍可選。</p>
+    <p class="small muted" style="margin-top:8px">設定會跟著同步，手機和電腦一致。整個程式都是線框設計稿的語彙（細線框、虛線分隔、打叉頭像），這裡選的只是強調色：第一個「線框稿」是純灰階，其他是帶顏色的強調線；行程紅黃綠、客戶分級、狀態標籤的顏色都保留。</p>
    </div>`;
 }
 const GOOGLE_CLIENT_ID='615249101814-ogv3iv1jktag6hueptfakj37l1pejfuh.apps.googleusercontent.com';  // 管理者填入 Google OAuth「網頁應用程式」用戶端 ID；留空則只能離線使用
