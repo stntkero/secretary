@@ -259,8 +259,62 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.15';
+const APP_VERSION='3.16';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
+const ALLOW_URL=(location.hostname==='127.0.0.1'||location.hostname==='localhost')?new URL('開通名單.txt',location.href).href:'https://stntkero.github.io/secretary/allow.txt'; // 開通名單：一行一個 Gmail；沒有這個檔就不限制
+let ALLOW={ok:true,status:'none',emails:[],contact:'',owner:''},allowLast=0;
+async function fetchAllowList(){
+  try{const r=await fetch(ALLOW_URL+'?_t='+Date.now(),{cache:'no-store'});
+    if(r.status===404)return {status:'none',emails:[],contact:''};
+    if(!r.ok)return {status:'error'};
+    const emails=[];let contact='';
+    for(let l of (await r.text()).replace(/^\uFEFF/,'').replace(/\r/g,'').split('\n')){l=l.trim();if(!l)continue;
+      if(/^(聯絡|contact)\s*[:：=]/i.test(l)){contact=l.replace(/^(聯絡|contact)\s*[:：=]/i,'').trim();continue}
+      if(l.startsWith('#')||l.startsWith('//'))continue;
+      const e=l.split(/[\s#，,]/)[0].toLowerCase();if(e.includes('@'))emails.push(e)}
+    return {status:'list',emails,contact};
+  }catch(e){return {status:'error'}}
+}
+async function allowCheck(){ // 回傳 true 表示這個帳號可以用
+  if(MODE!=='google'||!GACCT||!GACCT.email)return true;
+  allowLast=Date.now();const email=GACCT.email.toLowerCase();const res=await fetchAllowList();
+  let c=null;try{c=JSON.parse(localStorage.getItem('ss.allow')||'null')}catch{}
+  if(res.status==='error'){ // 讀不到名單：沿用上次這個帳號的結果；從沒確認過就先擋
+    ALLOW={ok:!!(c&&c.email===email&&c.ok),status:'error',emails:[],contact:c&&c.contact||'',owner:c&&c.owner||'',count:c&&c.count||0};return ALLOW.ok}
+  const ok=res.status==='none'||res.emails.includes(email);
+  ALLOW={ok,status:res.status,emails:res.emails,contact:res.contact,owner:res.emails[0]||'',count:res.emails.length};
+  try{localStorage.setItem('ss.allow',JSON.stringify({email,ok,contact:res.contact,owner:ALLOW.owner,count:res.emails.length,at:Date.now()}))}catch{}
+  return ok;
+}
+async function allowGate(){ // 開啟時：最近 24 小時確認過就先進去、背景再查；沒確認過就等查完
+  if(MODE!=='google'||!GACCT||!GACCT.email)return true;
+  let c=null;try{c=JSON.parse(localStorage.getItem('ss.allow')||'null')}catch{}
+  if(c&&c.email===GACCT.email.toLowerCase()&&c.ok&&Date.now()-c.at<24*3600e3){ALLOW={ok:true,status:'cache',emails:[],contact:c.contact||'',owner:c.owner||'',count:c.count||0};allowCheck().then(ok=>{if(!ok)renderBlocked();else if(ui.view==='settings')render()});return true}
+  return await allowCheck();
+}
+function allowRecheck(){if(MODE!=='google'||Date.now()-allowLast<3600e3)return;allowCheck().then(ok=>{if(!ok)renderBlocked()})}
+function renderBlocked(){
+  const a=GACCT||{},err=ALLOW.status==='error';
+  screen(`<h1>🛡 ${APP_NAME}</h1><h2>${err?'無法確認開通狀態':'這個帳號尚未開通'}</h2>
+  <p class="muted">${esc(a.email||'')}</p>
+  <p>${err?'讀不到開通名單，可能沒有網路。請連上網路後再按「重新檢查」。':'這個程式只開放給名單上的帳號。'+(ALLOW.contact?'請聯絡 '+esc(ALLOW.contact)+' 幫你開通。':'請聯絡給你網址的人幫你開通。')}</p>
+  <div class="row" style="margin-top:12px"><button class="btn p" id="alRetry">重新檢查</button><button class="btn" id="alOut">登出並換帳號</button></div>
+  <p class="small muted" style="margin-top:12px">你的資料仍存在你自己的 Google 雲端硬碟，開通後就能繼續使用。</p>`);
+  $('#alRetry').onclick=async()=>{const b=$('#alRetry');b.disabled=true;b.textContent='檢查中…';if(await allowCheck()){if(localStorage.getItem('ss.pinHash'))renderPinLock();else start()}else renderBlocked()};
+  $('#alOut').onclick=()=>{if(confirm('登出會清除這台裝置上的資料（雲端硬碟上的不受影響），之後可以用別的帳號登入。確定？'))wipeDevice()};
+}
+function allowCard(){
+  if(MODE!=='google')return '';
+  const me=(GACCT&&GACCT.email||'').toLowerCase(),owner=ALLOW.owner&&ALLOW.owner===me;
+  let body='';
+  if(ALLOW.status==='none')body=`<p class="small">網站上還沒有開通名單檔，目前任何 Google 帳號都能登入使用。</p>`;
+  else if(ALLOW.status==='error'&&!ALLOW.count)body=`<p class="small">暫時讀不到開通名單（可能沒有網路），沿用上次的結果。</p>`;
+  else body=`<p class="small">你的帳號已開通。名單共 ${ALLOW.count||ALLOW.emails.length} 人${ALLOW.status==='cache'?'（最近 24 小時內確認過）':''}。</p>`;
+  if(owner)body+=`<details><summary class="small muted" style="cursor:pointer">名單內容與維護方式（只有名單第一位看得到）</summary>
+    <ul class="small" style="margin:8px 0 6px 18px;padding:0">${ALLOW.emails.map(e=>`<li>${esc(e)}</li>`).join('')||'<li class="muted">尚未讀到</li>'}</ul>
+    <p class="small muted">加人、刪人：打開程式資料夾裡的「開通名單.txt」，一行一個 Gmail，存檔後點兩下「發布到網站.cmd」。被刪掉的人下次開啟程式就會被擋；名單第一行是你自己，請不要刪。要真的擋住懂技術的人，見「Google登入設定步驟.md」最後一節的 Google 端限制。</p></details>`;
+  return `<div class="card"><h3>開通名單</h3>${body}</div>`;
+}
 const THEMES=[["wire", "線框稿", "#ffffff"], ["grain", "膠卷噪點", "#1a1410"], ["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
   let th='wire',ap='auto';try{th=localStorage.getItem('ss.theme')||th;ap=localStorage.getItem('ss.appearance')||ap}catch{}
@@ -475,7 +529,7 @@ async function writeFile(){
 }
 function setSyncStatus(t){const el=$('#syncStatus');if(el)el.textContent=t}
 window.addEventListener('focus',()=>{if(S&&FH)pullFile(false);if(S)refreshTopic(false);if(S&&MODE==='google'){cloudSyncThrottled();if(gcalOn()&&gcalNeedsPush())scheduleGcalSync(500)}});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){checkVersion();if(MODE==='google'&&!validTok()&&autoAuthOn()&&silentRefresh(false))return;if(FH)pullFile(false);refreshTopic(false);if(MODE==='google'){cloudSyncThrottled();if(gcalOn()&&gcalNeedsPush())scheduleGcalSync(500)}}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S){checkVersion();allowRecheck();if(MODE==='google'&&!validTok()&&autoAuthOn()&&silentRefresh(false))return;if(FH)pullFile(false);refreshTopic(false);if(MODE==='google'){cloudSyncThrottled();if(gcalOn()&&gcalNeedsPush())scheduleGcalSync(500)}}});
 window.addEventListener('online',()=>{if(S&&MODE==='google')cloudSync()});
 
 /* ========= Google 登入 + 雲端硬碟自動同步 ========= */
@@ -587,13 +641,14 @@ async function googleSignIn(){
   PASS=devKey();keyCache={pass:null};
   if(!S){S=blank();S.settings.owner=GACCT.name||'';S.settings.updatedAt=Date.now()}
   cloudDirty=true;await doSaveLocal();
+  if(!(await allowCheck())){renderBlocked();return}
   const ok=await cloudSync({force:true,loud:true});
   start();
   if(ok)toast(`已登入 ${GACCT.email}，資料會自動同步`);
 }
 async function wipeDevice(){
   try{await kvDel('blob');await kvDel('handle');await kvDel('topicHandle')}catch{}
-  for(const k of ['ss.pass','ss.devkey','ss.gacct','ss.gtok','ss.mode','ss.cloudMod','ss.cloudDirty','ss.pinHash','ss.lastSync','ss.autoAuth','ss.silentFail','ss.authJust'])try{localStorage.removeItem(k)}catch{}
+  for(const k of ['ss.pass','ss.devkey','ss.gacct','ss.gtok','ss.mode','ss.cloudMod','ss.cloudDirty','ss.pinHash','ss.lastSync','ss.autoAuth','ss.silentFail','ss.authJust','ss.allow'])try{localStorage.removeItem(k)}catch{}
   location.reload();
 }
 async function googleSignOut(){
@@ -1086,6 +1141,7 @@ function viewSettings(){
   <div class="grid2">
   <div>
    ${syncCard()}
+   ${allowCard()}
    ${gcalCard()}
    ${securityCard()}
    ${themeCard()}
@@ -1744,6 +1800,7 @@ async function boot(){
     PASS=devKey();
     try{S=await decryptObj(blob,PASS)}catch(e){screen(`<h2>無法讀取本機資料</h2><p class="muted">這台裝置上的資料無法解開。清除後重新登入 Google，資料會從雲端下載回來。</p><button class="btn p" id="rst" style="width:100%;justify-content:center">清除並重新開始</button>`);$('#rst').onclick=()=>wipeDevice();return}
     if(!validTok()&&autoAuthOn()&&silentRefresh(false))return; // 權杖過期：先去 Google 靜默續期，回來再繼續
+    if(!(await allowGate())){renderBlocked();return} // 帳號不在開通名單就停在這裡
     if(localStorage.getItem('ss.pinHash'))renderPinLock();else start();
     return;
   }
