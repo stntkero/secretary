@@ -164,7 +164,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.0';
+const APP_VERSION='3.1';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const THEMES=[["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
@@ -535,24 +535,39 @@ let gcalBusy=false,gcalTimer=null,gcalLast=0,gcalErr='';
 const nextDay=d=>{const x=parseDate(d);x.setDate(x.getDate()+1);return iso(x)};
 function shiftTime(date,time,mins){const d=new Date(`${date}T${time}:00`);d.setMinutes(d.getMinutes()+mins);return {date:iso(d),time:`${pad(d.getHours())}:${pad(d.getMinutes())}`}}
 function scheduleGcalSync(ms){if(!gcalOn())return;clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalSync(),ms||3000)}
-async function gcalOwnCalendars(){ // 這個權限只看得到程式自己建立的日曆
-  const r=await gfetch(`${CAL_API}/users/me/calendarList?minAccessRole=owner&maxResults=250`);return ((await r.json()).items||[]).filter(c=>(c.summary||'')===CAL_NAME);
-}
+// 這個程式拿到的日曆權限（calendar.app.created）只能碰它自己建立的日曆，而且「不能列日曆清單」（會回 403）。
+// 所以日曆編號必須自己記：設定（會同步）＋這台裝置的 localStorage（備援）。換過的舊編號記在 gcal.oldIds，下次同步把舊日曆刪掉。
+function gcalRemember(id){try{localStorage.setItem('ss.gcalCalId',id)}catch{}}
 async function gcalEnsureCalendar(){
   const g=S.settings.gcal||{};
-  const rebind=id=>{for(const t of Object.values(S.tasks)){delete t.gcalId;delete t.gcalSynced;delete t.gcalUpdated}setSettings({gcal:Object.assign({},S.settings.gcal||{},{calendarId:id})})}; // 換了日曆：所有行程重新推送（推送前會先找日曆裡已有的事件沿用）
-  const own=await gcalOwnCalendars(); // 清單讀不到就直接失敗，寧可這次不同步，也不要在看不到清單的情況下多建一個日曆
-  let id=g.calendarId&&own.some(c=>c.id===g.calendarId)?g.calendarId:'';
-  if(!id&&g.calendarId){try{await gfetch(`${CAL_API}/calendars/${encodeURIComponent(g.calendarId)}`);id=g.calendarId}catch(e){if(!/404|410/.test(e.message))throw e}}
-  if(!id&&own.length){id=own[0].id;rebind(id)}
+  const rebind=id=>{ // 換了日曆：所有行程重新推送（推送前會先找日曆裡已有的事件沿用）
+    for(const t of Object.values(S.tasks)){delete t.gcalId;delete t.gcalSynced;delete t.gcalUpdated}
+    const cur=S.settings.gcal||{};const old=(cur.oldIds||[]).concat(cur.calendarId&&cur.calendarId!==id?[cur.calendarId]:[]).filter((x,i,arr)=>x&&x!==id&&arr.indexOf(x)===i).slice(-10);
+    setSettings({gcal:Object.assign({},cur,{calendarId:id,oldIds:old})});gcalRemember(id);
+  };
+  const exists=async id=>{try{const c=await (await gfetch(`${CAL_API}/calendars/${encodeURIComponent(id)}`)).json();return c&&c.id?c:null}catch(e){if(/404|410/.test(e.message))return null;throw e}};
+  let id='';
+  if(g.calendarId&&await exists(g.calendarId))id=g.calendarId;
+  if(!id){let mine='';try{mine=localStorage.getItem('ss.gcalCalId')||''}catch{} // 設定裡的編號不見了（例如被另一台裝置的設定蓋掉）：用這台裝置記住的
+    if(mine&&mine!==g.calendarId&&await exists(mine)){id=mine;rebind(id)}}
   if(!id){
     const r=await gfetch(`${CAL_API}/calendars`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({summary:CAL_NAME,description:'由業務秘書程式自動同步的行程與待辦',timeZone:'Asia/Taipei'})});
     const cal=await r.json();
     try{await gfetch(`${CAL_API}/users/me/calendarList/${encodeURIComponent(cal.id)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({colorId:'9'})})}catch{}
     rebind(cal.id);id=cal.id;
   }
-  // 多出來的同名日曆（兩台裝置同時連動、或先前清單沒讀到而重建）：刪掉，只留程式同步的這一個，不然日曆 App 會看到兩套一樣的事件
-  let dropped=0;for(const c of own){if(c.id===id)continue;try{await gfetch(`${CAL_API}/calendars/${encodeURIComponent(c.id)}`,{method:'DELETE'});dropped++}catch(e){if(e.message==='NOAUTH')throw e;console.warn('刪除多餘日曆失敗',c.id,e)}}
+  gcalRemember(id);
+  // 清理：以前用過、後來換掉的同名日曆（編號來自設定的 oldIds，以及這台裝置留下的同步記號）；還在就刪掉，不然日曆 App 會看到兩套一樣的事件
+  const stale=new Set((S.settings.gcal||{}).oldIds||[]);
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i)||'';const m=k.match(/^ss\.gcalTok2?\.(.+)$/);if(m&&m[1]!==id)stale.add(m[1])}}catch{}
+  let dropped=0;const failed=[];
+  for(const sid of stale){if(!sid||sid===id)continue;
+    try{const c=await exists(sid);
+      if(c&&(c.summary||'')===CAL_NAME){await gfetch(`${CAL_API}/calendars/${encodeURIComponent(sid)}`,{method:'DELETE'});dropped++}
+      try{localStorage.removeItem('ss.gcalTok.'+sid);localStorage.removeItem('ss.gcalTok2.'+sid)}catch{}
+    }catch(e){if(e.message==='NOAUTH')throw e;failed.push(sid);console.warn('清理舊日曆失敗，下次再試',sid,e)}
+  }
+  if(stale.size){const cur=S.settings.gcal||{};if(JSON.stringify(cur.oldIds||[])!==JSON.stringify(failed))setSettings({gcal:Object.assign({},cur,{oldIds:failed})})}
   if(dropped)toast(`已刪除 ${dropped} 個多餘的「${CAL_NAME}」日曆`);
   return id;
 }
