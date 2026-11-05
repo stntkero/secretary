@@ -169,7 +169,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.8';
+const APP_VERSION='3.9';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const THEMES=[["blue", "經典藍", "#0b3d91"], ["navy", "深海藍", "#102a43"], ["green", "墨綠", "#1b5e20"], ["teal", "藍綠", "#00695c"], ["wine", "酒紅", "#7b1131"], ["purple", "紫", "#4a148c"], ["orange", "橘", "#bf360c"], ["graphite", "石墨", "#263238"]];
 function applyTheme(){
@@ -1434,7 +1434,8 @@ function renderPlaceSugg(input){
 }
 document.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.act==='placeInput')renderPlaceSugg(e.target)});
 let placeSkipFocus=false;document.addEventListener('focusin',e=>{if(e.target.dataset&&e.target.dataset.act==='placeInput'){if(placeSkipFocus){placeSkipFocus=false;return}renderPlaceSugg(e.target)}});
-document.addEventListener('click',e=>{const b=document.getElementById('placeSugg');if(b&&!e.target.closest('#placeSugg')&&!(e.target.dataset&&e.target.dataset.act==='placeInput'))b.hidden=true});
+// 用 pointerdown 而不是 click 來收起清單：清單出現後視窗會重新置中、欄位跟著位移，放開滑鼠時的 click 目標常常已經不是欄位，用 click 判斷會把剛出現的清單又收掉
+document.addEventListener('pointerdown',e=>{const b=document.getElementById('placeSugg');if(b&&!b.hidden&&!e.target.closest('#placeWrap'))b.hidden=true});
 function taskForm(t,clientId){
   t=t||{};const cid=t.clientId||clientId||'';
   const clients=live('clients').sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
@@ -1445,7 +1446,7 @@ function taskForm(t,clientId){
     <label class="f"><span class="l">類型</span><select name="type">${opt(['待辦','行程'],t.type||(t.time?'行程':'待辦'))}</select></label>
     <label class="f"><span class="l">相關客戶</span><select name="clientId"><option value="">（無）</option>${clients.map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     <div class="f"><span class="l">顏色</span><div class="row" style="gap:10px;padding:4px 0">${CATS.map(([k,col])=>`<label class="swatch" style="background:${col}" title="${esc(catLabel(k))}"><input type="radio" name="cat" value="${k}" ${(t.cat||(cid?'r':'y'))===k?'checked':''}></label>`).join('')}</div></div>
-    <div class="w"><label class="f w"><span class="l">地點</span><input type="text" name="place" autocomplete="off" data-act="placeInput" value="${esc(t.place||'')}" placeholder="打店名或地址，會列出客戶地址、填過的地點與地圖搜尋結果（留空會用客戶地址）"></label><div class="sugg" id="placeSugg" hidden></div></div>
+    <div class="w" id="placeWrap"><label class="f w"><span class="l">地點</span><input type="text" name="place" autocomplete="off" data-act="placeInput" value="${esc(t.place||'')}" placeholder="打店名或地址，會列出客戶地址、填過的地點與地圖搜尋結果（留空會用客戶地址）"></label><div class="sugg" id="placeSugg" hidden></div></div>
     <label class="f w"><span class="l">備註</span><input type="text" name="note" value="${esc(t.note||'')}"></label>
   </div>`;
   modal(t.id?'編輯行程 / 待辦':'新增行程 / 待辦',inner,o=>{
