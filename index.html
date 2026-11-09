@@ -259,7 +259,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.16';
+const APP_VERSION='3.17';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const ALLOW_URL=(location.hostname==='127.0.0.1'||location.hostname==='localhost')?new URL('開通名單.txt',location.href).href:'https://stntkero.github.io/secretary/allow.txt'; // 開通名單：一行一個 Gmail；沒有這個檔就不限制
 let ALLOW={ok:true,status:'none',emails:[],contact:'',owner:''},allowLast=0;
@@ -684,6 +684,12 @@ function renderWelcome(){
 let gcalBusy=false,gcalTimer=null,gcalLast=0,gcalErr='';
 const nextDay=d=>{const x=parseDate(d);x.setDate(x.getDate()+1);return iso(x)};
 function shiftTime(date,time,mins){const d=new Date(`${date}T${time}:00`);d.setMinutes(d.getMinutes()+mins);return {date:iso(d),time:`${pad(d.getHours())}:${pad(d.getMinutes())}`}}
+const HHMM=/^\d{2}:\d{2}$/;
+function taskEnd(t){ // 行程結束的日期與時間：有填結束時間就用它（比開始早或相同視為跨到隔天），沒填預設一小時
+  if(t.endTime&&HHMM.test(t.endTime))return {date:t.endTime<=t.time?nextDay(t.date):t.date,time:t.endTime};
+  return shiftTime(t.date,t.time,60);
+}
+const taskTimeLabel=t=>t.time?t.time+(t.endTime&&HHMM.test(t.endTime)?'–'+t.endTime:''):'';
 function scheduleGcalSync(ms){if(!gcalOn())return;clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalSync(),ms||1500)}
 function gcalNeedsPush(){return !!S&&Object.values(S.tasks).some(t=>(t.updatedAt||0)>(t.gcalSynced||0)&&(t.date||t.deleted))}
 // 這個程式拿到的日曆權限（calendar.app.created）只能碰它自己建立的日曆，而且「不能列日曆清單」（會回 403）。
@@ -727,7 +733,7 @@ function taskToEvent(t){
   const summary=(t.done?'✅ ':'')+t.title+(name&&!t.title.includes(name)?`（${name}）`:'');
   const desc=[t.note||'',name?`客戶：${name}${c.phone?' '+c.phone:''}`:'',t.type?`類型：${t.type}`:'','— 由業務秘書同步'].filter(Boolean).join('\n');
   const ev={summary,description:desc,location:taskPlace(t),colorId:(CATS.find(x=>x[0]===taskCat(t))||CATS[1])[2],extendedProperties:{private:{ssId:t.id}}};
-  if(t.time&&/^\d{2}:\d{2}$/.test(t.time)){const e=shiftTime(t.date,t.time,60);ev.start={dateTime:`${t.date}T${t.time}:00`,timeZone:'Asia/Taipei'};ev.end={dateTime:`${e.date}T${e.time}:00`,timeZone:'Asia/Taipei'}}
+  if(t.time&&HHMM.test(t.time)){const e=taskEnd(t);ev.start={dateTime:`${t.date}T${t.time}:00`,timeZone:'Asia/Taipei'};ev.end={dateTime:`${e.date}T${e.time}:00`,timeZone:'Asia/Taipei'}}
   else{ev.start={date:t.date};ev.end={date:nextDay(t.date)}}
   return ev;
 }
@@ -735,8 +741,10 @@ function eventToTask(ev,t){
   const o={};let title=(ev.summary||'（無標題）').trim();let done=false;if(title.startsWith('✅')){done=true;title=title.slice(1).trim()}
   if(t&&t.clientId){const c=C(t.clientId);if(c&&title.endsWith(`（${c.name}）`))title=title.slice(0,-(c.name.length+2))}
   o.title=title.trim()||'（無標題）';o.done=done;
-  if(ev.start&&ev.start.dateTime){const d=new Date(ev.start.dateTime);o.date=iso(d);o.time=`${pad(d.getHours())}:${pad(d.getMinutes())}`}
-  else if(ev.start&&ev.start.date){o.date=ev.start.date;o.time=''}
+  if(ev.start&&ev.start.dateTime){const d=new Date(ev.start.dateTime);o.date=iso(d);o.time=`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const en=ev.end&&ev.end.dateTime?new Date(ev.end.dateTime):null;const mins=en?Math.round((en-d)/60000):0;
+    o.endTime=(!en||mins<=0||(mins===60&&!(t&&t.endTime)))?'':`${pad(en.getHours())}:${pad(en.getMinutes())}`} // 剛好一小時且原本沒填結束，就維持不填（那是預設長度）
+  else if(ev.start&&ev.start.date){o.date=ev.start.date;o.time='';o.endTime=''}
   o.note=(ev.description||'').split('\n').filter(l=>!/^(客戶：|類型：|— 由業務秘書同步)/.test(l)).join('\n').trim();
   if(ev.colorId){const c=CATS.find(x=>x[2]===String(ev.colorId));if(c)o.cat=c[0]}
   if(t&&!t.place&&ev.location&&ev.location===taskPlace(t)){}else o.place=(ev.location||'').trim(); // 日曆改了地點就帶回來；原本就是客戶地址則維持不填 // 在 Google 日曆改成紅 / 黃 / 綠也會同步回來
@@ -950,7 +958,7 @@ function taskRow(t){
   const c=t.clientId?C(t.clientId):null;
   return `<div class="task ${t.done?'done':''} c${taskCat(t)}" title="${esc(catLabel(taskCat(t)))}">
     <input type="checkbox" data-act="toggleTask" data-id="${t.id}" ${t.done?'checked':''}>
-    <div class="main"><div class="t">${t.time?`<span class="muted">${esc(t.time)}</span> `:''}${esc(t.title)} ${t.type==='行程'?'<span class="badge gray">行程</span>':''}</div>
+    <div class="main"><div class="t">${t.time?`<span class="muted">${esc(taskTimeLabel(t))}</span> `:''}${esc(t.title)} ${t.type==='行程'?'<span class="badge gray">行程</span>':''}</div>
     <div class="d small muted">${fmtDate(t.date,true)}${c?` ・ <a href="#" data-act="openClient" data-id="${c.id}">${esc(c.name)}</a>`:''}${taskPlace(t)?` ・ 📍 <a href="https://www.google.com/maps/search/${encodeURIComponent(taskPlace(t))}" target="_blank" rel="noopener" data-act="ext">${esc(taskPlace(t))}</a>`:''}${t.note?' ・ '+esc(t.note):''}</div></div>
     ${gcalOn()?'':`<a class="btn s ghost" data-act="ext" href="${gcalUrl(t)}" target="_blank" rel="noopener" title="加到 Google 日曆">📅</a>`}<button class="btn s ghost" data-act="editTask" data-id="${t.id}">編輯</button></div>`;
 }
@@ -1093,7 +1101,7 @@ function viewSchedule(){
   ${dates.length?html:'<div class="card empty">目前沒有行程或待辦</div>'}
   ${(()=>{const gone=Object.values(S.tasks).filter(x=>x.deleted&&Date.now()-(x.updatedAt||0)<14*864e5).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,30);
     return gone.length?`<details class="card" style="margin-top:12px"><summary class="small muted" style="cursor:pointer">最近刪除的行程（14 天內，可復原）：${gone.length} 筆</summary>
-      ${gone.map(x=>`<div class="task"><div style="flex:1"><div>${esc(x.title)}</div><div class="small muted">${fmtDate(x.date)} ${esc(x.time||'')}${x.deletedBy==='gcal'?' ・ 由 Google 日曆同步刪除':''}</div></div><button class="btn s" data-act="restoreTask" data-id="${x.id}">復原</button></div>`).join('')}</details>`:''})()}`;
+      ${gone.map(x=>`<div class="task"><div style="flex:1"><div>${esc(x.title)}</div><div class="small muted">${fmtDate(x.date)} ${esc(taskTimeLabel(x))}${x.deletedBy==='gcal'?' ・ 由 Google 日曆同步刪除':''}</div></div><button class="btn s" data-act="restoreTask" data-id="${x.id}">復原</button></div>`).join('')}</details>`:''})()}`;
 }
 
 function syncCard(){
@@ -1347,7 +1355,7 @@ function importCsv(){
 const ymd=s=>s.replace(/-/g,'');
 function gcalUrl(t){
   const c=t.clientId?C(t.clientId):null;let dates;
-  if(t.time){const [h,m]=t.time.split(':');const e=new Date(`${t.date}T${t.time}:00`);e.setHours(e.getHours()+1);dates=`${ymd(t.date)}T${h}${m}00/${ymd(iso(e))}T${pad(e.getHours())}${pad(e.getMinutes())}00`}
+  if(t.time){const e=taskEnd(t);dates=`${ymd(t.date)}T${t.time.replace(':','')}00/${ymd(e.date)}T${e.time.replace(':','')}00`}
   else{const n=parseDate(t.date);n.setDate(n.getDate()+1);dates=`${ymd(t.date)}/${ymd(iso(n))}`}
   const details=[c?`客戶：${c.name}`:'',c&&c.phone?`電話：${c.phone}`:'',t.note||''].filter(Boolean).join('\n');
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(t.title)}&dates=${dates}&details=${encodeURIComponent(details)}${taskPlace(t)?`&location=${encodeURIComponent(taskPlace(t))}`:''}`;
@@ -1359,7 +1367,7 @@ function exportIcs(){
   const ev=(uid,summary,ds,de,desc,rrule,loc)=>{L.push('BEGIN:VEVENT',`UID:${uid}@sales-secretary`,`DTSTAMP:${stamp}`,ds,de,`SUMMARY:${icsEsc(summary)}`);if(desc)L.push(`DESCRIPTION:${icsEsc(desc)}`);if(loc)L.push(`LOCATION:${icsEsc(loc)}`);if(rrule)L.push(rrule);L.push('END:VEVENT')};
   let n=0;
   for(const t of live('tasks').filter(x=>!x.done)){const c=t.clientId?C(t.clientId):null;const desc=[c?`客戶：${c.name}${c.phone?' '+c.phone:''}`:'',t.note||''].filter(Boolean).join('\n');
-    if(t.time){const [h,m]=t.time.split(':');const e=new Date(`${t.date}T${t.time}:00`);e.setHours(e.getHours()+1);ev(t.id,t.title,`DTSTART:${ymd(t.date)}T${h}${m}00`,`DTEND:${ymd(iso(e))}T${pad(e.getHours())}${pad(e.getMinutes())}00`,desc,'',taskPlace(t))}
+    if(t.time){const e=taskEnd(t);ev(t.id,t.title,`DTSTART:${ymd(t.date)}T${t.time.replace(':','')}00`,`DTEND:${ymd(e.date)}T${e.time.replace(':','')}00`,desc,'',taskPlace(t))}
     else{const d=parseDate(t.date);d.setDate(d.getDate()+1);ev(t.id,t.title,`DTSTART;VALUE=DATE:${ymd(t.date)}`,`DTEND;VALUE=DATE:${ymd(iso(d))}`,desc,'',taskPlace(t))}n++}
   for(const c of live('clients')){if(c.birthday&&c.birthday.length===10){const d=parseDate(c.birthday);if(!d)continue;d.setDate(d.getDate()+1);ev('bday-'+c.id,`${c.name} 生日`,`DTSTART;VALUE=DATE:${ymd(c.birthday)}`,`DTEND;VALUE=DATE:${ymd(iso(d))}`,'','RRULE:FREQ=YEARLY');n++}}
   L.push('END:VCALENDAR');
@@ -1599,7 +1607,8 @@ function taskForm(t,clientId){
   const inner=`<div class="fgrid">
     <label class="f w"><span class="l">事項 *</span><input type="text" name="title" required value="${esc(t.title||'')}" placeholder="例如：14:00 和陳先生在公司談建議書"></label>
     <label class="f"><span class="l">日期</span><input type="date" name="date" required value="${esc(t.date||today())}"></label>
-    <label class="f"><span class="l">時間（選填）</span><input type="time" name="time" value="${esc(t.time||'')}"></label>
+    <label class="f"><span class="l">開始時間（選填）</span><input type="time" name="time" value="${esc(t.time||'')}"></label>
+    <label class="f"><span class="l">結束時間（選填）</span><input type="time" name="endTime" value="${esc(t.endTime||'')}" title="沒填就當作一小時"></label>
     <label class="f"><span class="l">類型</span><select name="type">${opt(['待辦','行程'],t.type||(t.time?'行程':'待辦'))}</select></label>
     <label class="f"><span class="l">相關客戶</span><select name="clientId"><option value="">（無）</option>${clients.map(c=>`<option value="${c.id}" ${c.id===cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
     <div class="f"><span class="l">顏色</span><div class="row" style="gap:10px;padding:4px 0">${CATS.map(([k,col])=>`<label class="swatch" style="background:${col}" title="${esc(catLabel(k))}"><input type="radio" name="cat" value="${k}" ${(t.cat||(cid?'r':'y'))===k?'checked':''}></label>`).join('')}</div></div>
@@ -1607,7 +1616,7 @@ function taskForm(t,clientId){
     <label class="f w"><span class="l">備註</span><input type="text" name="note" value="${esc(t.note||'')}"></label>
   </div>`;
   modal(t.id?'編輯行程 / 待辦':'新增行程 / 待辦',inner,o=>{
-    put('tasks',Object.assign({},t,{id:t.id||uid(),title:o.title,date:o.date,time:o.time,type:o.type,clientId:o.clientId,place:(o.place||'').trim(),note:o.note,cat:o.cat||'y',done:!!t.done}));
+    put('tasks',Object.assign({},t,{id:t.id||uid(),title:o.title,date:o.date,time:o.time,endTime:o.time?o.endTime:'',type:o.type,clientId:o.clientId,place:(o.place||'').trim(),note:o.note,cat:o.cat||'y',done:!!t.done}));
     closeModal();render();toast('已儲存');
   },t.id?`<button type="button" class="btn d" data-act="delTask" data-id="${t.id}">刪除</button>`:'');
 }
