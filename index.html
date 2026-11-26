@@ -305,7 +305,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 'use strict';
 /* ========= 常數 ========= */
 const APP_NAME='業務秘書';
-const APP_VERSION='3.18';
+const APP_VERSION='3.19';
 const SITE_TOPIC_URL='https://stntkero.github.io/secretary/topic.md'; // 電腦排程每天把今日話題發布到這裡，手機直接讀
 const ALLOW_URL=(location.hostname==='127.0.0.1'||location.hostname==='localhost')?new URL('開通名單.txt',location.href).href:'https://stntkero.github.io/secretary/allow.txt'; // 開通名單：一行一個 Gmail；沒有這個檔就不限制
 let ALLOW={ok:true,status:'none',emails:[],contact:'',owner:''},allowLast=0;
@@ -396,6 +396,7 @@ const REPEATS=[['','不重複'],['d','每天'],['w','每週'],['2w','每兩週']
 const REP_LABEL={d:'每天',w:'每週','2w':'每兩週',m:'每月',y:'每年'};
 const REP_DEFAULT={d:30,w:26,'2w':13,m:12,y:5}; // 沒填結束日時往後排幾筆
 const REP_MAX={d:90,w:104,'2w':52,m:36,y:10};   // 有填結束日時的上限，避免一次排出太多筆
+const REP_GAP={d:1,w:7,'2w':14,m:28,y:365};     // 兩次之間最少隔幾天；跨日行程的天數要比這個短，不然會自己疊在一起
 function repeatDates(start,rep,until){
   const out=[],s=parseDate(start);if(!s||!REP_LABEL[rep])return out;
   const max=until?REP_MAX[rep]:REP_DEFAULT[rep],dom=s.getDate();
@@ -452,6 +453,16 @@ const daysSince=s=>s?daysBetween(s,today()):null;
 const ago=d=>d===null?'':d===0?'今天':d===1?'昨天':`${d} 天前`;
 const WD=['日','一','二','三','四','五','六'];
 function fmtDate(s,withWd){const d=parseDate(s);if(!d)return s||'';const t=`${d.getMonth()+1}/${d.getDate()}`;return withWd?`${t}（${WD[d.getDay()]}）`:t}
+// ---- 跨日行程：endDate 比 date 晚才算數；沒填、同一天或格式不對，就是一般的單日行程。其他地方一律透過 taskLast 取最後一天，不直接讀 endDate ----
+const YMD=/^\d{4}-\d{2}-\d{2}$/;
+const taskLast=t=>(t.date&&t.endDate&&YMD.test(t.date)&&YMD.test(t.endDate)&&t.endDate>t.date&&parseDate(t.endDate))?t.endDate:t.date; // 行程的最後一天
+const isMulti=t=>!!t.date&&taskLast(t)!==t.date;
+const taskCovers=(t,d)=>!!t.date&&t.date<=d&&d<=taskLast(t);
+function taskDateLabel(t,wd){ // 單日：11/28（五）；跨日：11/28（五） 09:00～11/30（日） 17:00・共 3 天（時間各自跟著自己的日期）
+  if(!isMulti(t))return fmtDate(t.date,wd);
+  const tm=t.time&&HHMM.test(t.time),last=taskLast(t);
+  return `${fmtDate(t.date,wd)}${tm?' '+t.time:''}～${fmtDate(last,wd)}${tm&&t.endTime&&HHMM.test(t.endTime)?' '+t.endTime:''}・共 ${daysBetween(t.date,last)+1} 天`;
+}
 function daysUntilAnnual(s){ // 'YYYY-MM-DD' 或 'MM-DD' → 距下次週年的天數
   if(!s)return null;const md=s.slice(-5);if(!/^\d\d-\d\d$/.test(md))return null;
   const t=new Date();t.setHours(0,0,0,0);let y=t.getFullYear();
@@ -780,11 +791,13 @@ let gcalBusy=false,gcalTimer=null,gcalLast=0,gcalErr='';
 const nextDay=d=>{const x=parseDate(d);x.setDate(x.getDate()+1);return iso(x)};
 function shiftTime(date,time,mins){const d=new Date(`${date}T${time}:00`);d.setMinutes(d.getMinutes()+mins);return {date:iso(d),time:`${pad(d.getHours())}:${pad(d.getMinutes())}`}}
 const HHMM=/^\d{2}:\d{2}$/;
+const plusHour=tm=>{const [h,m]=tm.split(':').map(Number);return h>=23?'23:59':`${pad(h+1)}:${pad(m)}`}; // 同一天之內往後一小時
 function taskEnd(t){ // 行程結束的日期與時間：有填結束時間就用它（比開始早或相同視為跨到隔天），沒填預設一小時
+  if(isMulti(t))return {date:taskLast(t),time:(t.endTime&&HHMM.test(t.endTime))?t.endTime:plusHour(t.time)}; // 跨日行程：結束在「結束日期」那一天；沒填結束時間就用開始時間往後一小時
   if(t.endTime&&HHMM.test(t.endTime))return {date:t.endTime<=t.time?nextDay(t.date):t.date,time:t.endTime};
   return shiftTime(t.date,t.time,60);
 }
-const taskTimeLabel=t=>t.time?t.time+(t.endTime&&HHMM.test(t.endTime)?'–'+t.endTime:''):'';
+const taskTimeLabel=t=>(t.time&&!isMulti(t))?t.time+(t.endTime&&HHMM.test(t.endTime)?'–'+t.endTime:''):''; // 跨日行程的時間寫在日期範圍裡（taskDateLabel），這裡不重複
 function scheduleGcalSync(ms){if(!gcalOn())return;clearTimeout(gcalTimer);gcalTimer=setTimeout(()=>gcalSync(),ms||1500)}
 function gcalNeedsPush(){return !!S&&Object.values(S.tasks).some(t=>(t.updatedAt||0)>(t.gcalSynced||0)&&(t.date||t.deleted))}
 // 這個程式拿到的日曆權限（calendar.app.created）只能碰它自己建立的日曆，而且「不能列日曆清單」（會回 403）。
@@ -829,17 +842,22 @@ function taskToEvent(t){
   const desc=[t.note||'',name?`客戶：${name}${c.phone?' '+c.phone:''}`:'',t.type?`類型：${t.type}`:'','— 由業務秘書同步'].filter(Boolean).join('\n');
   const ev={summary,description:desc,location:taskPlace(t),colorId:(CATS.find(x=>x[0]===taskCat(t))||CATS[1])[2],extendedProperties:{private:{ssId:t.id}}};
   if(t.time&&HHMM.test(t.time)){const e=taskEnd(t);ev.start={dateTime:`${t.date}T${t.time}:00`,timeZone:'Asia/Taipei'};ev.end={dateTime:`${e.date}T${e.time}:00`,timeZone:'Asia/Taipei'}}
-  else{ev.start={date:t.date};ev.end={date:nextDay(t.date)}}
+  else{ev.start={date:t.date};ev.end={date:nextDay(taskLast(t))}} // 整天事件的結束日是「最後一天的隔天」
   return ev;
 }
+const tpe=s=>{const d=new Date(Date.parse(s)+8*3600e3);return {date:`${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())}`,time:`${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`}}; // 事件時間換成台北的日期與時刻（推出去時寫的就是台北時間；手機帶出國、時區變了也不會跑掉）
 function eventToTask(ev,t){
   const o={};let title=(ev.summary||'（無標題）').trim();let done=false;if(title.startsWith('✅')){done=true;title=title.slice(1).trim()}
   if(t&&t.clientId){const c=C(t.clientId);if(c&&title.endsWith(`（${c.name}）`))title=title.slice(0,-(c.name.length+2))}
   o.title=title.trim()||'（無標題）';o.done=done;
-  if(ev.start&&ev.start.dateTime){const d=new Date(ev.start.dateTime);o.date=iso(d);o.time=`${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    const en=ev.end&&ev.end.dateTime?new Date(ev.end.dateTime):null;const mins=en?Math.round((en-d)/60000):0;
-    o.endTime=(!en||mins<=0||(mins===60&&!(t&&t.endTime)))?'':`${pad(en.getHours())}:${pad(en.getMinutes())}`} // 剛好一小時且原本沒填結束，就維持不填（那是預設長度）
-  else if(ev.start&&ev.start.date){o.date=ev.start.date;o.time='';o.endTime=''}
+  if(ev.start&&ev.start.dateTime){const st=tpe(ev.start.dateTime);o.date=st.date;o.time=st.time;
+    const en=ev.end&&ev.end.dateTime?tpe(ev.end.dateTime):null;const mins=en?Math.round((Date.parse(ev.end.dateTime)-Date.parse(ev.start.dateTime))/60000):0;
+    let et=en?en.time:'',de=en?en.date:o.date;
+    if(et==='00:00'&&de>nextDay(o.date)){de=shiftDate(de,-1);et='23:59'} // 兩天以上、剛好午夜結束：最後一天其實是前一天
+    const overnight=de===nextDay(o.date)&&et<=o.time; // 隔天、而且結束時刻不比開始晚：沿用「結束時間比開始早＝跨到隔天」的記法，不另外記結束日期
+    o.endDate=(!en||mins<=0||de<=o.date||(overnight&&!(t&&t.endDate===de)))?'':de; // 一定要回傳這個欄位（空的也要），不然在日曆把多天改回一天時，舊的結束日期會留著
+    o.endTime=(!en||mins<=0||(!(t&&t.endTime)&&(o.endDate?et===plusHour(o.time):mins===60)))?'':et} // 長度剛好是預設值且原本沒填結束時間，就維持不填
+  else if(ev.start&&ev.start.date){o.date=ev.start.date;o.time='';o.endTime='';const last=ev.end&&ev.end.date&&parseDate(ev.end.date)?shiftDate(ev.end.date,-1):'';o.endDate=last>o.date?last:''} // 整天事件的 end 是最後一天的隔天
   o.note=(ev.description||'').split('\n').filter(l=>!/^(客戶：|類型：|— 由業務秘書同步)/.test(l)).join('\n').trim();
   if(ev.colorId){const c=CATS.find(x=>x[2]===String(ev.colorId));if(c)o.cat=c[0]}
   if(t&&!t.place&&ev.location&&ev.location===taskPlace(t)){}else o.place=(ev.location||'').trim(); // 日曆改了地點就帶回來；原本就是客戶地址則維持不填 // 在 Google 日曆改成紅 / 黃 / 綠也會同步回來
@@ -896,7 +914,7 @@ async function gcalSync(opts={}){
         else if(!t.gcalId){t.gcalId=ev.id;t.gcalUpdated=evUp}
       }else{
         const nt=Object.assign({id:uid(),clientId:'',createdAt:Date.now()},eventToTask(ev,null),{gcalId:ev.id,gcalUpdated:evUp});
-        nt.type=nt.time?'行程':'待辦';nt.updatedAt=Date.now();nt.gcalSynced=nt.updatedAt;S.tasks[nt.id]=nt;pulled++;
+        nt.type=(nt.time||nt.endDate)?'行程':'待辦';nt.updatedAt=Date.now();nt.gcalSynced=nt.updatedAt;S.tasks[nt.id]=nt;pulled++;
       }
     }
     if(nextSync){try{localStorage.setItem(tokKey,nextSync)}catch{}}
@@ -904,9 +922,14 @@ async function gcalSync(opts={}){
     const oldCut=iso(new Date(Date.now()-90*864e5));let failed=0,lastErr='';
     const vAt=+localStorage.getItem('ss.gcalVerifyAt')||0;
     if(opts.loud||Date.now()-vAt>12*3600e3){
-      const liveIds=new Set();let pt=null;
+      const liveIds=new Set(),liveEv={};let pt=null;
       for(let g=0;g<10;g++){const q=new URLSearchParams({maxResults:'250',singleEvents:'true',timeMin:new Date(Date.now()-90*864e5).toISOString()});if(pt)q.set('pageToken',pt);
-        const j=await (await gfetch(`${base}?${q}`)).json();for(const e of (j.items||[]))if(e.status!=='cancelled')liveIds.add(e.id);if(!j.nextPageToken)break;pt=j.nextPageToken}
+        const j=await (await gfetch(`${base}?${q}`)).json();for(const e of (j.items||[]))if(e.status!=='cancelled'){liveIds.add(e.id);liveEv[e.id]=e}if(!j.nextPageToken)break;pt=j.nextPageToken}
+      for(const t of Object.values(S.tasks)){ // 沒有待推的修改、開始的日期時間也和事件一致，才只補結束日期，其餘不動
+        if(t.deleted||!t.date||!t.gcalId||isMulti(t)||(t.updatedAt||0)>(t.gcalSynced||0))continue;const e=liveEv[t.gcalId];if(!e||(Date.parse(e.updated||'')||0)>(t.gcalUpdated||0))continue;
+        let o=null;try{o=eventToTask(e,t)}catch(err){console.warn(err)}
+        if(o&&o.endDate&&o.date===t.date&&(o.time||'')===(t.time||'')){t.endDate=o.endDate;if(o.time)t.endTime=o.endTime;t.updatedAt=Date.now();t.gcalSynced=t.updatedAt;pulled++}
+      }
       let rebuilt=0;for(const t of Object.values(S.tasks)){if(t.deleted||!t.date||t.date<oldCut||!t.gcalId)continue;if(!liveIds.has(t.gcalId)){t.gcalId=null;t.gcalSynced=0;rebuilt++}}
       try{localStorage.setItem('ss.gcalVerifyAt',String(Date.now()))}catch{}
       if(rebuilt)toast(`有 ${rebuilt} 筆行程在日曆上不見了，重新建立`);
@@ -916,7 +939,7 @@ async function gcalSync(opts={}){
       if((t.updatedAt||0)<=(t.gcalSynced||0))continue;
       try{
         if(t.deleted){if(t.gcalId){try{await gfetch(`${base}/${encodeURIComponent(t.gcalId)}`,{method:'DELETE'})}catch(e){if(!/404|410/.test(e.message))throw e}}t.gcalSynced=t.updatedAt;pushed++;continue}
-        if(!t.date||(!t.gcalId&&t.date<oldCut)){t.gcalSynced=t.updatedAt;continue}
+        if(!t.date||(!t.gcalId&&taskLast(t)<oldCut)){t.gcalSynced=t.updatedAt;continue}
         const body=JSON.stringify(taskToEvent(t));let r=null;
         if(!t.gcalId){ // 先查日曆有沒有這筆行程建過的事件（上次同步到一半斷線時會這樣），有就沿用，不再多建一個
           try{const f=await (await gfetch(`${base}?${new URLSearchParams({privateExtendedProperty:'ssId='+t.id,maxResults:'10'})}`)).json();
@@ -1003,8 +1026,9 @@ function importFile(){
 /* ========= 秘書提醒計算 ========= */
 function brief(){
   const t=today(),st=S.settings,cl=live('clients'),tasks=live('tasks');
-  const todayTasks=tasks.filter(x=>x.date===t&&!x.done).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  const overdue=tasks.filter(x=>x.date<t&&!x.done).sort((a,b)=>a.date.localeCompare(b.date));
+  const tk=x=>x.date<t?'':(x.time||''); // 進行中的跨日行程（前幾天就開始了）排最前面
+  const todayTasks=tasks.filter(x=>taskCovers(x,t)&&!x.done).sort((a,b)=>tk(a).localeCompare(tk(b))||a.date.localeCompare(b.date));
+  const overdue=tasks.filter(x=>x.date&&taskLast(x)<t&&!x.done).sort((a,b)=>a.date.localeCompare(b.date)); // 跨日行程要過了最後一天才算逾期
   const upcoming=tasks.filter(x=>x.date>t&&!x.done&&daysBetween(t,x.date)<=7).sort((a,b)=>a.date.localeCompare(b.date));
   const bdays=[];
   for(const c of cl){
@@ -1054,9 +1078,9 @@ function taskRow(t){
   const c=t.clientId?C(t.clientId):null;
   return `<div class="task ${t.done?'done':''} c${taskCat(t)}" title="${esc(catLabel(taskCat(t)))}">
     <input type="checkbox" data-act="toggleTask" data-id="${t.id}" ${t.done?'checked':''}>
-    <div class="main"><div class="t">${t.time?`<span class="muted">${esc(taskTimeLabel(t))}</span> `:''}${esc(t.title)} ${t.seriesId?`<span title="重複行程（${REP_LABEL[t.rep]||'重複'}）">🔁</span> `:''}${t.type==='行程'?'<span class="badge gray">行程</span>':''}</div>
-    <div class="d small muted">${fmtDate(t.date,true)}${c?` ・ <a href="#" data-act="openClient" data-id="${c.id}">${esc(c.name)}</a>`:''}${taskPlace(t)?` ・ 📍 <a href="https://www.google.com/maps/search/${encodeURIComponent(taskPlace(t))}" target="_blank" rel="noopener" data-act="ext">${esc(taskPlace(t))}</a>`:''}${t.note?' ・ '+esc(t.note):''}</div></div>
-    ${gcalOn()?'':`<a class="btn s ghost" data-act="ext" href="${gcalUrl(t)}" target="_blank" rel="noopener" title="加到 Google 日曆">📅</a>`}<button class="btn s ghost" data-act="editTask" data-id="${t.id}">編輯</button></div>`;
+    <div class="main"><div class="t">${taskTimeLabel(t)?`<span class="muted">${esc(taskTimeLabel(t))}</span> `:''}${esc(t.title)} ${t.seriesId?`<span title="重複行程（${REP_LABEL[t.rep]||'重複'}）">🔁</span> `:''}${t.type==='行程'?'<span class="badge gray">行程</span>':''}</div>
+    <div class="d small muted">${esc(taskDateLabel(t,true))}${c?` ・ <a href="#" data-act="openClient" data-id="${c.id}">${esc(c.name)}</a>`:''}${taskPlace(t)?` ・ 📍 <a href="https://www.google.com/maps/search/${encodeURIComponent(taskPlace(t))}" target="_blank" rel="noopener" data-act="ext">${esc(taskPlace(t))}</a>`:''}${t.note?' ・ '+esc(t.note):''}</div></div>
+    ${gcalOn()?'':`<a class="btn s ghost" data-act="ext" href="${esc(gcalUrl(t))}" target="_blank" rel="noopener" title="加到 Google 日曆">📅</a>`}<button class="btn s ghost" data-act="editTask" data-id="${t.id}">編輯</button></div>`;
 }
 
 function viewToday(){
@@ -1194,14 +1218,19 @@ function viewCalendar(){
   const t=today(),ym=/^\d{4}-\d{2}$/.test(ui.calMonth)?ui.calMonth:t.slice(0,7);const [Y,M]=ym.split('-').map(Number);
   const dim=new Date(Y,M,0).getDate(),lead=(new Date(Y,M-1,1).getDay()+6)%7; // 週一開頭，和「本週（一到日）」一致
   const by={};let total=0;
-  for(const x of live('tasks')){if(!x.date||x.date.slice(0,7)!==ym||(!ui.showDone&&x.done))continue;(by[x.date]=by[x.date]||[]).push(x);total++}
-  for(const k in by)by[k].sort((a,b)=>(a.time||'~').localeCompare(b.time||'~'));
+  const mF=`${ym}-01`,mL=`${ym}-${pad(dim)}`;
+  for(const x of live('tasks')){if(!x.date||(!ui.showDone&&x.done))continue;
+    if(!isMulti(x)){if(x.date.slice(0,7)!==ym)continue;(by[x.date]=by[x.date]||[]).push(x);total++;continue}
+    const xl=taskLast(x);if(xl<mF||x.date>mL)continue;total++; // 跨日行程：涵蓋到的每一天都放一格（只算這個月的部分），本月筆數只算一次
+    for(let d=x.date<mF?mF:x.date,e=xl>mL?mL:xl,g=0;d<=e&&g<31;d=nextDay(d),g++)(by[d]=by[d]||[]).push(x)}
+  const ck=x=>isMulti(x)?'0'+x.date+x.id:'1'+(x.time||'~'); // 跨日的排最上面而且每天順序一樣，看起來才連得起來；其餘照時間
+  for(const k in by)by[k].sort((a,b)=>ck(a).localeCompare(ck(b)));
   const bd={};for(const c of live('clients')){if(c.birthday&&c.birthday.length===10&&Number(c.birthday.slice(5,7))===M){const d=Number(c.birthday.slice(8,10));(bd[d]=bd[d]||[]).push(c.name)}}
   const sel=ui.calDay&&ui.calDay.slice(0,7)===ym?ui.calDay:(t.slice(0,7)===ym?t:'');
   let cells='';for(let i=0;i<lead;i++)cells+='<div class="calcell out"></div>';
   for(let d=1;d<=dim;d++){
     const ds=`${ym}-${pad(d)}`,list=by[ds]||[],wd=(lead+d-1)%7,show=list.slice(0,3);
-    cells+=`<button type="button" class="calcell ${ds===t?'today':''} ${ds===sel?'sel':''} ${wd>=5?'we':''}" data-act="calDay" data-d="${ds}" title="${fmtDate(ds,true)}${list.length?`：${list.length} 筆`:''}"><span class="dn">${d}</span>${bd[d]?`<span class="ce bd" title="${esc(bd[d].join('、'))} 生日">🎂<i>${esc(bd[d][0])}${bd[d].length>1?` 等 ${bd[d].length} 人`:''}</i></span>`:''}${show.map(x=>`<span class="ce c${taskCat(x)} ${x.done?'done':''}">${x.time?esc(x.time)+' ':''}${esc(x.title)}</span>`).join('')}${list.length>3?`<span class="ce more">+${list.length-3}</span>`:''}</button>`;
+    cells+=`<button type="button" class="calcell ${ds===t?'today':''} ${ds===sel?'sel':''} ${wd>=5?'we':''}" data-act="calDay" data-d="${ds}" title="${fmtDate(ds,true)}${list.length?`：${list.length} 筆`:''}"><span class="dn">${d}</span>${bd[d]?`<span class="ce bd" title="${esc(bd[d].join('、'))} 生日">🎂<i>${esc(bd[d][0])}${bd[d].length>1?` 等 ${bd[d].length} 人`:''}</i></span>`:''}${show.map(x=>`<span class="ce c${taskCat(x)} ${x.done?'done':''}">${ds>x.date?'→ ':(x.time?esc(x.time)+' ':'')}${esc(x.title)}</span>`).join('')}${list.length>3?`<span class="ce more">+${list.length-3}</span>`:''}</button>`;
   }
   const dayList=sel?(by[sel]||[]):[];
   const dayBd=sel&&bd[Number(sel.slice(8,10))]||[];
@@ -1215,7 +1244,7 @@ function viewSchedule(){
   const t=today();let tasks=live('tasks');
   if(!ui.showDone)tasks=tasks.filter(x=>!x.done);
   tasks.sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
-  const groups={};for(const x of tasks){(groups[x.date]=groups[x.date]||[]).push(x)}
+  const groups={};for(const x of tasks){const k=(x.date<t&&taskLast(x)>=t)?t:x.date;(groups[k]=groups[k]||[]).push(x)} // 進行中的跨日行程（已開始、還沒到最後一天）放在今天，不放到「逾期」底下
   const dates=Object.keys(groups).sort();
   const html=dates.map(d=>{const cls=d<t?'over':d===t?'today':'';const label=d<t?`逾期 ・ ${fmtDate(d,true)}`:d===t?`今天 ・ ${fmtDate(d,true)}`:`${fmtDate(d,true)}${daysBetween(t,d)<=7?`（${daysBetween(t,d)} 天後）`:''}`;
     return `<div class="daygroup ${cls}"><h4>${label}</h4><div class="card" style="padding:4px 14px">${groups[d].map(taskRow).join('')}</div></div>`}).join('');
@@ -1224,7 +1253,7 @@ function viewSchedule(){
   ${ui.schedView==='cal'?viewCalendar():(dates.length?html:'<div class="card empty">目前沒有行程或待辦</div>')}
   ${(()=>{const gone=Object.values(S.tasks).filter(x=>x.deleted&&Date.now()-(x.updatedAt||0)<14*864e5).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,30);
     return gone.length?`<details class="card" style="margin-top:12px"><summary class="small muted" style="cursor:pointer">最近刪除的行程（14 天內，可復原）：${gone.length} 筆</summary>
-      ${gone.map(x=>`<div class="task"><div style="flex:1"><div>${esc(x.title)}</div><div class="small muted">${fmtDate(x.date)} ${esc(taskTimeLabel(x))}${x.deletedBy==='gcal'?' ・ 由 Google 日曆同步刪除':''}</div></div><button class="btn s" data-act="restoreTask" data-id="${x.id}">復原</button></div>`).join('')}</details>`:''})()}`;
+      ${gone.map(x=>`<div class="task"><div style="flex:1"><div>${esc(x.title)}</div><div class="small muted">${esc(taskDateLabel(x,false))} ${esc(taskTimeLabel(x))}${x.deletedBy==='gcal'?' ・ 由 Google 日曆同步刪除':''}</div></div><button class="btn s" data-act="restoreTask" data-id="${x.id}">復原</button></div>`).join('')}</details>`:''})()}`;
 }
 
 function syncCard(){
@@ -1339,7 +1368,7 @@ function traitsForm(cid){const c=C(cid);modal(`${esc(c.name)} 的客戶特徵`,t
 /* ========= 今日話題 ========= */
 function topicPrompt(){
   const t=today();const d=new Date();
-  const cl=live('tasks').filter(x=>x.date===t&&!x.done&&x.clientId).map(x=>C(x.clientId)).filter(c=>c&&!c.deleted);
+  const cl=live('tasks').filter(x=>taskCovers(x,t)&&!x.done&&x.clientId).map(x=>C(x.clientId)).filter(c=>c&&!c.deleted);
   const traits=[...new Set(cl.flatMap(c=>c.traits||[]))].slice(0,15);
   const base=(S.settings.topicPrompt||DEFAULT_TOPIC_PROMPT).trim();
   let ctx='';
@@ -1479,7 +1508,7 @@ const ymd=s=>s.replace(/-/g,'');
 function gcalUrl(t){
   const c=t.clientId?C(t.clientId):null;let dates;
   if(t.time){const e=taskEnd(t);dates=`${ymd(t.date)}T${t.time.replace(':','')}00/${ymd(e.date)}T${e.time.replace(':','')}00`}
-  else{const n=parseDate(t.date);n.setDate(n.getDate()+1);dates=`${ymd(t.date)}/${ymd(iso(n))}`}
+  else{dates=`${ymd(t.date)}/${ymd(nextDay(taskLast(t)))}`}
   const details=[c?`客戶：${c.name}`:'',c&&c.phone?`電話：${c.phone}`:'',t.note||''].filter(Boolean).join('\n');
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(t.title)}&dates=${dates}&details=${encodeURIComponent(details)}${taskPlace(t)?`&location=${encodeURIComponent(taskPlace(t))}`:''}`;
 }
@@ -1491,7 +1520,7 @@ function exportIcs(){
   let n=0;
   for(const t of live('tasks').filter(x=>!x.done)){const c=t.clientId?C(t.clientId):null;const desc=[c?`客戶：${c.name}${c.phone?' '+c.phone:''}`:'',t.note||''].filter(Boolean).join('\n');
     if(t.time){const e=taskEnd(t);ev(t.id,t.title,`DTSTART:${ymd(t.date)}T${t.time.replace(':','')}00`,`DTEND:${ymd(e.date)}T${e.time.replace(':','')}00`,desc,'',taskPlace(t))}
-    else{const d=parseDate(t.date);d.setDate(d.getDate()+1);ev(t.id,t.title,`DTSTART;VALUE=DATE:${ymd(t.date)}`,`DTEND;VALUE=DATE:${ymd(iso(d))}`,desc,'',taskPlace(t))}n++}
+    else{ev(t.id,t.title,`DTSTART;VALUE=DATE:${ymd(t.date)}`,`DTEND;VALUE=DATE:${ymd(nextDay(taskLast(t)))}`,desc,'',taskPlace(t))}n++}
   for(const c of live('clients')){if(c.birthday&&c.birthday.length===10){const d=parseDate(c.birthday);if(!d)continue;d.setDate(d.getDate()+1);ev('bday-'+c.id,`${c.name} 生日`,`DTSTART;VALUE=DATE:${ymd(c.birthday)}`,`DTEND;VALUE=DATE:${ymd(iso(d))}`,'','RRULE:FREQ=YEARLY');n++}}
   L.push('END:VCALENDAR');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([L.join('\r\n')],{type:'text/calendar;charset=utf-8'}));a.download=`業務秘書行事曆_${today()}.ics`;a.click();
@@ -1996,7 +2025,8 @@ function taskForm(t,clientId){
   const clients=live('clients').sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
   const inner=`<div class="fgrid">
     <label class="f w"><span class="l">事項 *</span><input type="text" name="title" required value="${esc(t.title||'')}" placeholder="例如：14:00 和陳先生在公司談建議書"></label>
-    <label class="f"><span class="l">日期</span><input type="date" name="date" required value="${esc(t.date||today())}"></label>
+    <label class="f"><span class="l">日期</span><input type="date" name="date" required max="9999-12-31" data-act="taskDate" data-prev="${esc(t.date||today())}" value="${esc(t.date||today())}"></label>
+    <label class="f"><span class="l">結束日期（跨好幾天才填）</span><input type="date" name="endDate" max="9999-12-31" value="${esc(isMulti(t)?taskLast(t):'')}" title="例如三天的教育訓練、出國旅遊：日期填第一天，這裡填最後一天。只有一天就留空"></label>
     <label class="f"><span class="l">開始時間（選填）</span><input type="time" name="time" value="${esc(t.time||'')}"></label>
     <label class="f"><span class="l">結束時間（選填）</span><input type="time" name="endTime" value="${esc(t.endTime||'')}" title="沒填就當作一小時"></label>
     <label class="f"><span class="l">類型</span><select name="type">${opt(['待辦','行程'],t.type||(t.time?'行程':'待辦'))}</select></label>
@@ -2007,20 +2037,30 @@ function taskForm(t,clientId){
     ${inSeries?`<label class="f w"><span class="l">🔁 這是重複行程（${REP_LABEL[t.rep]||'重複'}，同系列共 ${sib.length} 筆）。這次的修改或刪除要套用到</span><select name="scope"><option value="one">只有這一筆</option><option value="after">這一筆和之後的（${sib.filter(x=>x.date>=t.date).length} 筆）</option><option value="all">整個系列（${sib.length} 筆）</option></select></label>`
     :`<label class="f"><span class="l">重複</span><select name="rep">${REPEATS.map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select></label>
     <label class="f"><span class="l">重複到哪一天（選填）</span><input type="date" name="repUntil" title="沒填的話：每天排 30 天、每週與每兩週排半年、每月排一年、每年排五年"></label>
-    <p class="small muted w" style="margin:0">選了重複，存檔時會把之後每一筆都排進行程。沒填結束日：每天排 30 天、每週與每兩週排半年、每月排一年、每年排五年。</p>`}
+    <p class="small muted w" style="margin:0">選了重複，存檔時會把之後每一筆都排進行程。沒填「重複到哪一天」：每天排 30 天、每週與每兩週排半年、每月排一年、每年排五年。跨好幾天的行程，每一次都會排成一樣的天數。</p>`}
   </div>`;
   modal(t.id?'編輯行程 / 待辦':'新增行程 / 待辦',inner,o=>{
+    // 這幾項檢查要在寫入任何一筆之前做完（下面會先寫同系列的其他筆）
+    if(!YMD.test(o.date)||!parseDate(o.date)){alert('日期的格式不對，請重新選一次。');return}
+    if(o.endDate&&(!YMD.test(o.endDate)||!parseDate(o.endDate))){alert('結束日期的格式不對，請重新選一次。');return}
+    if(o.endDate&&o.endDate<o.date){alert('結束日期不能比開始的日期早。請改結束日期；只有一天的行程把它清空就好。');return}
+    const endDate=(o.endDate&&o.endDate>o.date)?o.endDate:'',span=endDate?daysBetween(o.date,endDate):0; // span＝往後跨幾天（0＝單日）；每一筆的結束日期都用「自己的開始日 + span」算，不放進 base
+    const repKey=inSeries?((o.scope&&o.scope!=='one')?(t.rep||''):''):(o.rep||'');
+    if(span&&repKey&&REP_GAP[repKey]&&span>=REP_GAP[repKey]){alert(inSeries?`這個系列是「${REP_LABEL[repKey]}」重複，每一筆都排成 ${span+1} 天會互相重疊。請${repKey==='d'?'把結束日期清空':'縮短天數'}，或在下面改選「只有這一筆」。`
+      :repKey==='d'?'跨好幾天的行程不能再設成「每天」重複（每一筆會互相重疊）。\n\n要連續好幾天算一筆：「重複」選「不重複」，只填結束日期就好。\n要每天各排一筆、排到某一天：把結束日期清空，那一天填在「重複到哪一天」。'
+      :`這筆行程一次有 ${span+1} 天，比「${REP_LABEL[repKey]}」的間隔還長，排出來會互相重疊。請縮短天數，或改用間隔比較長的重複方式。`);return}
+    if(span>92&&!confirm(`這筆行程從 ${fmtDate(o.date)} 到 ${endDate.slice(0,4)}/${fmtDate(endDate)}，一共 ${span+1} 天。確定沒有選錯日期嗎？`))return;
     const base={title:o.title,time:o.time,endTime:o.time?o.endTime:'',type:o.type,clientId:o.clientId,place:(o.place||'').trim(),note:o.note,cat:o.cat||'y'};
-    const me=Object.assign({},t,base,{id:t.id||uid(),date:o.date,done:!!t.done});
+    const me=Object.assign({},t,base,{id:t.id||uid(),date:o.date,endDate,done:!!t.done}); // endDate 一定要寫（清空時寫空字串），不然舊值會留著
     let msg='已儲存';
     if(inSeries&&o.scope&&o.scope!=='one'){ // 同系列一起改；日期有動就整批平移同樣天數
       const shift=daysBetween(t.date,o.date);let n=0;
-      for(const x of sib){if(x.id===t.id||(o.scope==='after'&&x.date<t.date))continue;put('tasks',Object.assign(x,base,{date:shift?shiftDate(x.date,shift):x.date}));n++}
+      for(const x of sib){if(x.id===t.id||(o.scope==='after'&&x.date<t.date))continue;const nd=shift?shiftDate(x.date,shift):x.date;put('tasks',Object.assign(x,base,{date:nd,endDate:span?shiftDate(nd,span):''}));n++}
       msg=`已儲存，同系列另外 ${n} 筆也一起改了`;
     }else if(!inSeries&&o.rep){
       const ds=repeatDates(o.date,o.rep,o.repUntil);
-      if(ds.length){me.seriesId=uid();me.rep=o.rep;for(const d of ds)put('tasks',Object.assign({},base,{id:uid(),date:d,done:false,seriesId:me.seriesId,rep:o.rep}));msg=`已儲存，並排好之後 ${ds.length} 筆（${REP_LABEL[o.rep]}，到 ${fmtDate(ds[ds.length-1])}）`}
-      else msg='已儲存這一筆（結束日比下一次還早，沒有排出其他日期）';
+      if(ds.length){me.seriesId=uid();me.rep=o.rep;for(const d of ds)put('tasks',Object.assign({},base,{id:uid(),date:d,endDate:span?shiftDate(d,span):'',done:false,seriesId:me.seriesId,rep:o.rep}));msg=`已儲存，並排好之後 ${ds.length} 筆（${REP_LABEL[o.rep]}，到 ${fmtDate(ds[ds.length-1])}）`}
+      else msg='已儲存這一筆（「重複到哪一天」比下一次還早，沒有排出其他日期）';
     }
     put('tasks',me);
     closeModal();render();toast(msg);
@@ -2152,6 +2192,10 @@ document.addEventListener('change',e=>{
   const el=e.target.closest('[data-act]');if(!el)return;const act=el.dataset.act,id=el.dataset.id;
   switch(act){
     case 'toggleTask':{const t=S.tasks[id];t.done=el.checked;t.doneAt=el.checked?Date.now():null;put('tasks',t);render();break}
+    case 'taskDate':{const en=el.form&&el.form.elements.endDate,prev=el.dataset.prev,nv=el.value;
+      if(!YMD.test(nv)||nv<'1900-01-01'||!parseDate(nv))break; // 年份還在打（0002、0020、0202…）或被清空：還不是完整的日期，結束日期和 data-prev 都先不動
+      if(en&&en.value&&YMD.test(en.value)&&YMD.test(prev||'')&&parseDate(prev)&&parseDate(en.value)&&en.value>prev){const r=shiftDate(en.value,daysBetween(prev,nv));if(YMD.test(r))en.value=r}
+      el.dataset.prev=nv;break}
     case 'setSales':{const c=C(id);const won=el.value==='成交'&&c.salesStage!=='成交';if(won)c.closedAt=Date.now();c.salesStage=el.value;const thanked=won&&thankReferrer(c);put('clients',c);render();if(thanked)toast('已排一筆感謝介紹人的待辦');break}
     case 'setRecruit':{const c=C(id);if(el.value==='已報到'&&c.recruitStage!=='已報到')c.recruitedAt=Date.now();c.recruitStage=el.value;put('clients',c);render();break}
     case 'setRecruitActive':{const c=C(id);c.recruitActive=el.checked;if(el.checked&&(!c.recruitStage||c.recruitStage==='未啟動'))c.recruitStage='聊過意願';put('clients',c);render();break}
